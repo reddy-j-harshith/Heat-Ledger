@@ -1,6 +1,6 @@
 Users
 
--> user authentciation
+-> user authentication
 -> Maintaining a database of users
 -> identification of users
 
