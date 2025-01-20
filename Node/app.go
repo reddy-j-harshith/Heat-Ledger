@@ -336,8 +336,6 @@ func main() {
 		// Handle Direct Message Mode
 		if mode == "1" {
 
-			fmt.Print(kademliaDHT.PeerKey())
-
 			// Direct Message logic (same as before)
 			for {
 				if userStream == nil {
