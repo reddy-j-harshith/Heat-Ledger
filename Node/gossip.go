@@ -10,14 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
-func gossipProtocol(stream network.Stream) {
-
-	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-	go gossipExecute(rw, stream)
-
-}
-
-func gossipExecute(rw *bufio.ReadWriter, strm network.Stream) {
+func messageGossip(rw *bufio.ReadWriter, strm network.Stream) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered from panic in gossipExecute:", r)

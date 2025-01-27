@@ -69,14 +69,6 @@ func readData(rw *bufio.ReadWriter) {
 	}
 }
 
-func messageProtocol(stream network.Stream) {
-
-	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
-	go readData(rw)
-	// go writeData(rw)
-
-}
 func main() {
 	log.SetAllLoggers(log.LevelWarn)
 	log.SetLogLevel("rendezvous", "info")
