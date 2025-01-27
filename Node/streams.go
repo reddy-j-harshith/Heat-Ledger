@@ -13,14 +13,14 @@ func broadcastMessage(stream network.Stream) {
 
 }
 
-func broadcastTxn(stream network.Stream) {
+func broadcastTxn(stream network.Stream, txn Transaction) {
 
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	go propagateTxn(rw, stream)
 
 }
 
-func broadcastBlock(stream network.Stream) {
+func broadcastBlock(stream network.Stream, block Block) {
 
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	go propagateBlock(rw, stream)
