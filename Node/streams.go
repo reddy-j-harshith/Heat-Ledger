@@ -9,14 +9,13 @@ import (
 func gossipProtocol(stream network.Stream) {
 
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-	go messageGossip(rw, stream)
+	go broadcastMessage(rw, stream)
 
 }
 
 func messageProtocol(stream network.Stream) {
 
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
 	go readData(rw)
 	// go writeData(rw)
 }
