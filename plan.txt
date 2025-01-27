@@ -1,8 +1,7 @@
 Users
 
--> user authentication
--> Maintaining a database of users
--> identification of users
+-> Maintaining a database of users - Taken Care by the Wallet
+-> identification of users - Using the public key of the Users
 
 Blockchain specific actions
 
@@ -13,13 +12,13 @@ Blockchain specific actions
 -> Maintain a difficulty stat for the mining difficulty
 -> Gossip the next transactions to the other nodes, so that new txns. can be included in the mempool
 
-Local Database:
+Local Database: - Done
 
--> Linked blockchain copy
--> Wallet
--> Maintaining a mempool of unconfirmed transactions -> Array
--> map[string]Merkle_Node: Merkle_Roots
--> map[string]Transaction: Transactions
+-> Blockchain copy - Done
+-> UTXO Database - Done
+-> Maintaining a mempool of unconfirmed transactions -> Slice - Done
+-> map[string]Merkle_Node: Merkle_Roots - Done
+-> map[string]Transaction: Transactions - Done
 
 Things to consider
 
@@ -31,32 +30,42 @@ Things to consider
 -> After downloading all the blocks, the blockchain needs to be validated.
 -> Extract UTXOs while downloading the chain
 
-Models:
+Models: - Done
+	
+	type UTXO struct {
+		txn_id string
+		index  int32
+		amount float64
+		owner  string
+	}
 
-	Struct Block:
+	type Transaction struct {
+		tnx_id     string // SHA(SHA(from + to + amount + fee + timestamp))
+		block_hash string // Parent block
+		in_sz      int32
+		out_sz     int32
+		fee        float64
+		inputs     []UTXO
+		outputs    []UTXO
+		timestamp  time.Time
+	}
 
-		timestamp:
-		block_height:
-		previous_block_hash:
-		block_id: (hash_of_serialized_txns of the block)
-		nonce:
-		merkle_hash:
-		difficulty:
+	type Block struct {
+		block_hash    string // Primary Key
+		block_height  int32
+		previous_hash string
+		nonce         int32
+		difficulty    int32
+		merkle_hash   string // Obtain the merkle root from the target node and send the list of transactions to build the local merkle tree
+		timestamp     time.Time
+	}
 
-	Struct Transaction
-
-		txn_id: (Double hashing the serialized transaction data)
-		timestamp:
-		block_hash:
-		from: (public key)
-		to: (public key)
-		amount:
-		fee:
-
-	Struct Merkle_Node:
-		Value:
-		Left: Merkle_Node -> NIL
-		Right: Merkle_Node -> NIL
+	type MerkleNode struct {
+		value string // Concatenations of the left and right nodes
+		left  *MerkleNode
+		right *MerkleNode
+		// Leaf nodes will contain the hash of the txid, and left / right are set in NIL
+	}
 
 	Making the Merkle Tree:
 		1) Taking all the transactions in an array
@@ -67,15 +76,15 @@ Models:
 
 		4) Construct the tree by repeatedly concatenating the hashes
 		5) Set the left and the right of the nodes to NIL for the leaves
-		6) Calculate the hash of the root and store it using a hashmap:
+		6) After calculating the hash of the root and store it using a hashmap:
 
 			map[string]Merkle_Node
 
 		7) Add this hash value to the block
 
 
-		Successful Mining ----
-							  \
-	 						   |-----> Change mode ----> Onto Block creation
-							  /
-		Recieve a block ------
+		Successful Mining ----											----- Reject -----> Continue Block Creation
+							  \										   /
+	 						   |-----> Change into Validate mode -----|
+							  /										   \
+		Recieve a block ------											----- Accept -----> Onto the next block

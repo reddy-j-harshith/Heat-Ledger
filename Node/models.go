@@ -10,13 +10,21 @@ type Message struct {
 	Content    string `json:"content"`
 }
 
+type UTXO struct {
+	txn_id string
+	index  int32
+	amount float64
+	owner  string
+}
+
 type Transaction struct {
-	tnx_id     string // SHA(SHA(from + to + amount + fee + timestamp)))
+	tnx_id     string // SHA(SHA(from + to + amount + fee + timestamp))
 	block_hash string // Parent block
-	from       string // Sender
-	to         string // Reciever
-	amount     float64
+	in_sz      int32
+	out_sz     int32
 	fee        float64
+	inputs     []UTXO
+	outputs    []UTXO
 	timestamp  time.Time
 }
 
@@ -31,8 +39,8 @@ type Block struct {
 }
 
 type MerkleNode struct {
-	Value string // Concatenations of the left and right nodes
-	Left  *MerkleNode
-	Right *MerkleNode
+	value string // Concatenations of the left and right nodes
+	left  *MerkleNode
+	right *MerkleNode
 	// Leaf nodes will contain the hash of the txid, and left / right are set in NIL
 }
