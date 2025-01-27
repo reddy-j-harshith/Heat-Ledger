@@ -10,7 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
-func broadcastMessage(rw *bufio.ReadWriter, strm network.Stream) {
+func messageGossip(rw *bufio.ReadWriter, strm network.Stream) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered from panic in gossipExecute:", r)
@@ -112,12 +112,4 @@ func broadcastMessage(rw *bufio.ReadWriter, strm network.Stream) {
 			stream.Close()
 		}
 	}
-}
-
-func broadcastBlock(rw *bufio.ReadWriter, strm network.Stream) {
-
-}
-
-func broadcastTxn(rw *bufio.ReadWriter, strm network.Stream) {
-
 }
