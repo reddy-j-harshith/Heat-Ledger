@@ -30,7 +30,7 @@ To get started with the project, follow these steps:
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/blockchain-application.git
+    git clone https://github.com/reddy-j-harshith/Mini-Messenger-libp2p
     ```
 2. Navigate to the project directory:
     ```sh
@@ -38,21 +38,24 @@ To get started with the project, follow these steps:
     ```
 3. Install the dependencies:
     ```sh
-    npm install
+    go mod init Messenger
+    go get github.com/libp2p/go-libp2p
+    go get github.com/libp2p/go-libp2p-kad-dht
     ```
 
 ## Usage
 
 To run the blockchain application, use the following command:
 ```sh
-npm start
+go run bootstrap.go
+```
+
+To run the blockchain application, use the following command:
+```sh
+go run . --peer {bootstrap address}
 ```
 
 You can interact with the application through the command-line interface to create transactions, mine blocks, and view the blockchain.
-
-## Contributing
-
-We welcome contributions to the project! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request.
 
 ## License
 
