@@ -29,3 +29,18 @@ func downloadBlockchain() {
 func removeTxns(block Block) {
 
 }
+
+// Compress the merkle tree
+func compressMerkle() {
+
+}
+
+// Validate whether the recieved blockchain copy has some inconsistencies
+func validateBlockchain() {
+
+}
+
+// Creation of UTXO entries
+func storeUTXO() {
+
+}
