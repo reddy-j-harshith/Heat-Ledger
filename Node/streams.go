@@ -28,7 +28,7 @@ func broadcastBlock(stream network.Stream) {
 
 }
 
-// Messaging Stream Handlere
+// Messaging Stream Handlers
 func messageProtocol(stream network.Stream) {
 
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
@@ -37,6 +37,7 @@ func messageProtocol(stream network.Stream) {
 	// go writeData(rw)
 }
 
+// Download Request handlers
 func downloadProtocol(stream network.Stream) {
 
 }
