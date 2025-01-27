@@ -8,7 +8,6 @@ Welcome to the Blockchain Application project! This repository contains the impl
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Contributing](#contributing)
 - [License](#license)
 
 ## Introduction
