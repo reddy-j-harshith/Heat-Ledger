@@ -97,7 +97,7 @@ func main() {
 
 	// Setting a handlers
 	host.SetStreamHandler(protocol.ID(config.ProtocolID+"/message"), messageProtocol)
-	host.SetStreamHandler(protocol.ID(config.ProtocolID+"/gossip"), gossipProtocol)
+	host.SetStreamHandler(protocol.ID(config.ProtocolID+"/gossip"), broadcastMessage)
 
 	// Extract Bootstrap peers
 	ctx := context.Background()
