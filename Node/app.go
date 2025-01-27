@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 
 	"os"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
@@ -25,12 +23,6 @@ import (
 )
 
 var logger = log.Logger("rendezvous")
-
-type Message struct {
-	Sender     string `json:"sender"`
-	Message_Id int32  `json:"m_id"`
-	Content    string `json:"content"`
-}
 
 func (m *Message) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
@@ -59,136 +51,6 @@ func (m *Message) UnmarshalJSON(data []byte) error {
 	m.Message_Id = aux.Message_Id
 	m.Content = aux.Content
 	return nil
-}
-
-var (
-	// Set the user
-	User host.Host
-
-	// Local DHT
-	kademliaDHT *dht.IpfsDHT
-
-	// Make the message database
-	m_id     int32                       = 1
-	least    map[string]int32            = map[string]int32{}
-	database map[string]map[int32]string = map[string]map[int32]string{}
-
-	// Maintain a set of neighbors
-	peerArray []peer.AddrInfo  = []peer.AddrInfo{}
-	peerSet   map[peer.ID]bool = map[peer.ID]bool{}
-)
-
-func gossipProtocol(stream network.Stream) {
-
-	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-	go gossipExecute(rw, stream)
-
-}
-
-var peerMutex sync.RWMutex
-
-func gossipExecute(rw *bufio.ReadWriter, strm network.Stream) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered from panic in gossipExecute:", r)
-		}
-	}()
-
-	for {
-		line, err := rw.ReadString('\n')
-		if err != nil {
-			return
-		}
-
-		if line == "" || line == "\n" {
-			continue
-		}
-
-		var message Message
-		err = json.Unmarshal([]byte(line), &message)
-		if err != nil {
-			fmt.Println("Failed to parse JSON:", err)
-			continue
-		}
-
-		peerMutex.RLock()
-		small, exist := least[message.Sender]
-		peerMutex.RUnlock()
-
-		if !exist || message.Message_Id > small {
-			peerMutex.Lock()
-			least[message.Sender] = message.Message_Id
-			peerMutex.Unlock()
-		} else {
-			// Skip as the message might be very old or already reached
-			continue
-		}
-
-		// Database Access with Mutex
-		peerMutex.RLock()
-		_, exists := database[message.Sender]
-		peerMutex.RUnlock()
-
-		if !exists {
-			peerMutex.Lock()
-			database[message.Sender] = make(map[int32]string)
-			peerMutex.Unlock()
-		}
-
-		peerMutex.RLock()
-		_, exists = database[message.Sender][message.Message_Id]
-		peerMutex.RUnlock()
-
-		if exists {
-			continue
-		}
-
-		peerMutex.Lock()
-		database[message.Sender][message.Message_Id] = message.Content
-		peerMutex.Unlock()
-
-		fmt.Printf("\x1b[32m> Message Sent by: %s\n> Message: %s\n> Sent from %s\x1b[0m\n", message.Sender, message.Content, strm.Conn().RemotePeer())
-
-		peerMutex.RLock()
-		peers := peerArray
-		peerMutex.RUnlock()
-
-		for _, peer := range peers {
-			if peer.ID == strm.Conn().RemotePeer() || peer.ID.String() == message.Sender {
-				continue
-			}
-
-			stream, err := User.NewStream(context.Background(), peer.ID, protocol.ID("/chat/1.0.0/gossip"))
-			if err != nil {
-				continue
-			}
-
-			rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
-			data, err := json.Marshal(message)
-			if err != nil {
-				fmt.Println("Failed to serialize message:", err)
-				stream.Close()
-				continue
-			}
-
-			_, err = rw.WriteString(string(data) + "\n")
-			if err != nil {
-				fmt.Println("Failed to send message to peer:", peer.ID, err)
-				stream.Close()
-				continue
-			}
-
-			err = rw.Flush()
-			if err != nil {
-				fmt.Println("Failed to flush data to peer:", peer.ID, err)
-				stream.Close()
-				continue
-			}
-
-			stream.Close()
-		}
-	}
 }
 
 func readData(rw *bufio.ReadWriter) {
@@ -256,7 +118,13 @@ func main() {
 	}
 
 	// Create a local dht with custom buket size
-	kademliaDHT, err = dht.New(ctx, host, dht.BootstrapPeers(bootstrapPeers...), dht.ProtocolPrefix("/custom-dht"), dht.BucketSize(5))
+	kademliaDHT, err = dht.New(
+		ctx, host,
+		dht.BootstrapPeers(bootstrapPeers...),
+		dht.ProtocolPrefix("/custom-dht"),
+		dht.BucketSize(5),
+	)
+
 	if err != nil {
 		panic(err)
 	}

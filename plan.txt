@@ -28,6 +28,8 @@ Things to consider
 	compress the hash values of the block when a new block is mined
 -> Selection of the transactions
 -> Merkle tree making
+-> After downloading all the blocks, the blockchain needs to be validated.
+-> Extract UTXOs while downloading the chain
 
 Models:
 
