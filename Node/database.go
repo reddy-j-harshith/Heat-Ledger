@@ -8,13 +8,14 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 
-// Local database
+// Global variables
 var (
+	// Functional variables
 	User        host.Host                             // Current User Node
-	kademliaDHT *dht.IpfsDHT                          // Local DHT
+	peerSet     map[peer.ID]bool = map[peer.ID]bool{} // Set of neighbors
 	peerMutex   sync.RWMutex                          // Mutex for the message database
 	peerArray   []peer.AddrInfo  = []peer.AddrInfo{}  // Array of neighbors
-	peerSet     map[peer.ID]bool = map[peer.ID]bool{} // Set of neighbors
+	kademliaDHT *dht.IpfsDHT                          // Local DHT
 
 	// Message database
 	m_id     int32                       = 1
