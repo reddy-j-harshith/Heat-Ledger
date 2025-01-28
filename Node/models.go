@@ -21,25 +21,25 @@ type UTXO struct {
 }
 
 type input struct {
-	txn_id    string
-	index     int32
-	signature string
+	txn_id    string `json:"txn_id"`
+	index     int32  `json:"index"`
+	signature string `json:"sign"`
 }
 
 type output struct {
-	value  float64
-	pubkey string
+	pubkey string  `json:"pubkey"`
+	value  float64 `json:"amount"`
 }
 
 type Transaction struct {
-	tnx_id     string // SHA(SHA(from + to + amount + fee + timestamp))
-	block_hash string // Parent block
-	in_sz      int32
-	out_sz     int32
-	fee        float64
-	inputs     []input
-	outputs    []output
-	timestamp  time.Time
+	tnx_id     string    `json:"txn_id"`
+	block_hash string    `json:"block_hash"`
+	in_sz      int32     `json:"in_sz"`
+	out_sz     int32     `json:"out_sz"`
+	fee        float64   `json:"fee"`
+	inputs     []input   `json:"inputs"`
+	outputs    []output  `json:"outputs"`
+	timestamp  time.Time `json:"timestamp"`
 }
 
 type Block struct {
