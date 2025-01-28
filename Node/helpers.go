@@ -1,7 +1,7 @@
 package main
 
-// Creation of a merkle tree and storage
-func makeMerkle() {
+// Creation of a merkle tree and storage - Max 8 transactions
+func makeMerkle(txnList []Transaction) *MerkleNode {
 
 }
 
