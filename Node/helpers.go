@@ -8,7 +8,11 @@ import (
 
 // Creation of a merkle tree and storage
 func buildMerkle(txnList []Transaction) string {
+	if len(txnList) == 0 {
+		return ""
+	}
 
+	// Calculate the depth of the tree
 	merkleDepth := math.Ceil(math.Log2(float64(len(txnList))))
 	// Create the merkle tree
 	MerkleRoot := merkleFunc(txnList, 0, 0, int(merkleDepth))
@@ -21,23 +25,21 @@ func buildMerkle(txnList []Transaction) string {
 	return MerkleRoot.Value
 }
 
-func merkleFunc(txnList []Transaction, idx int, level int, depth int) *MerkleNode {
+func merkleFunc(txnList []Transaction, treeIdx int, level int, depth int) *MerkleNode {
 
 	len := int(len(txnList))
 
-	node := &MerkleNode{
-		Value: "",
-	}
+	node := &MerkleNode{}
 
-	if len == 0 || idx >= len {
+	if len == 0 {
 		return node
 	}
 
 	// If this not the last level
 	if level < depth {
 
-		node.Left = merkleFunc(txnList, (2*idx)+1, level+1, depth)
-		node.Right = merkleFunc(txnList, (2*idx)+2, level+1, depth)
+		node.Left = merkleFunc(txnList, (2*treeIdx)+1, level+1, depth)
+		node.Right = merkleFunc(txnList, (2*treeIdx)+2, level+1, depth)
 		leftData := node.Left.Value
 		rightData := node.Right.Value
 		hash_data := sha256.Sum256([]byte(leftData + rightData))
@@ -45,7 +47,7 @@ func merkleFunc(txnList []Transaction, idx int, level int, depth int) *MerkleNod
 		return node
 	}
 
-	txnIdx := idx - (1 << uint(depth)) - 1
+	txnIdx := treeIdx - (1 << uint(depth)) - 1
 	var hash_data [32]byte
 
 	if txnIdx >= len {
