@@ -21,42 +21,42 @@ type UTXO struct {
 }
 
 type input struct {
-	txn_id    string `json:"txn_id"`
-	index     int32  `json:"index"`
-	signature string `json:"sign"`
+	Txn_id    string `json:"txn_id"`
+	Index     int32  `json:"index"`
+	Signature string `json:"sign"`
 }
 
 type output struct {
-	pubkey string  `json:"pubkey"`
-	value  float64 `json:"amount"`
+	Pubkey string  `json:"pubkey"`
+	Value  float64 `json:"amount"`
 }
 
 type Transaction struct {
-	tnx_id     string    `json:"txn_id"`
-	block_hash string    `json:"block_hash"`
-	in_sz      int32     `json:"in_sz"`
-	out_sz     int32     `json:"out_sz"`
-	fee        float64   `json:"fee"`
-	inputs     []input   `json:"inputs"`
-	outputs    []output  `json:"outputs"`
-	timestamp  time.Time `json:"timestamp"`
+	Tnx_id     string    `json:"txn_id"`
+	Block_hash string    `json:"block_hash"`
+	In_sz      int32     `json:"in_sz"`
+	Out_sz     int32     `json:"out_sz"`
+	Fee        float64   `json:"fee"`
+	Inputs     []input   `json:"inputs"`
+	Outputs    []output  `json:"outputs"`
+	Timestamp  time.Time `json:"timestamp"`
 }
 
 type Block struct {
-	block_hash    string // Primary Key
-	block_height  int32
-	previous_hash string
-	nonce         int32
-	difficulty    int32
-	merkle_hash   string // Obtain the merkle root from the target node and send the list of transactions to build the local merkle tree
-	timestamp     time.Time
+	Block_hash    string // Primary Key
+	Block_height  int32
+	Previous_hash string
+	Nonce         int32
+	Difficulty    int32
+	Merkle_hash   string // Obtain the merkle root from the target node and send the list of transactions to build the local merkle tree
+	Timestamp     time.Time
 }
 
 type MerkleNode struct {
 	// Concatenations of the left and right nodes
-	value string
-	left  *MerkleNode
-	right *MerkleNode
+	Value string
+	Left  *MerkleNode
+	Right *MerkleNode
 }
 
 // Leaf nodes will contain the hash of the txid, and left / right are set in NIL
@@ -65,18 +65,18 @@ type MerkleNode struct {
 func (txn *Transaction) generateTxn() {
 	var data string
 
-	for _, input := range txn.inputs {
-		data += input.txn_id + strconv.Itoa(int(input.index))
+	for _, input := range txn.Inputs {
+		data += input.Txn_id + strconv.Itoa(int(input.Index))
 	}
 
-	for _, output := range txn.outputs {
-		data += fmt.Sprintf("%.8f", output.value) + output.pubkey
+	for _, output := range txn.Outputs {
+		data += fmt.Sprintf("%.8f", output.Value) + output.Pubkey
 	}
 
-	data += fmt.Sprintf("%.8f", txn.fee)
-	data += txn.timestamp.String()
+	data += fmt.Sprintf("%.8f", txn.Fee)
+	data += txn.Timestamp.String()
 
 	hash := sha256.Sum256([]byte(data))
 
-	txn.tnx_id = fmt.Sprintf("%x", hash)
+	txn.Tnx_id = fmt.Sprintf("%x", hash)
 }

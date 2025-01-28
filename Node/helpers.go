@@ -3,40 +3,60 @@ package main
 import (
 	"crypto/sha256"
 	"fmt"
+	"math"
 )
 
-// Creation of a merkle tree and storage - <= 8 transactions
+// Creation of a merkle tree and storage
 func buildMerkle(txnList []Transaction) string {
 
-	MerkleRoot := merkleFunc(txnList, 0)
+	merkleDepth := math.Ceil(math.Log2(float64(len(txnList))))
+	// Create the merkle tree
+	MerkleRoot := merkleFunc(txnList, 0, 0, int(merkleDepth))
 
-	// Save the node
-	Merkle_Roots[MerkleRoot.value] = MerkleRoot
+	// Save the merkle root to the database
+	MerkleMutex.RLock()
+	Merkle_Roots[MerkleRoot.Value] = MerkleRoot
+	MerkleMutex.RUnlock()
 
-	return MerkleRoot.value
+	return MerkleRoot.Value
 }
 
-func merkleFunc(txnList []Transaction, idx int) *MerkleNode {
-	len := len(txnList)
-	if idx >= len {
-		return nil
-	}
+func merkleFunc(txnList []Transaction, idx int, level int, depth int) *MerkleNode {
 
-	data := txnList[idx].tnx_id
+	len := int(len(txnList))
 
 	node := &MerkleNode{
-		left:  nil,
-		right: nil,
-		value: fmt.Sprintf("%x", sha256.Sum256([]byte(data))),
+		Value: "",
 	}
 
-	if (2*idx)+1 >= len || (2*idx)+2 >= len {
+	if len == 0 || idx >= len {
 		return node
 	}
 
-	node.left = merkleFunc(txnList, (2*idx)+1)
-	node.right = merkleFunc(txnList, (2*idx)+2)
+	// If this not the last level
+	if level < depth {
 
+		node.Left = merkleFunc(txnList, (2*idx)+1, level+1, depth)
+		node.Right = merkleFunc(txnList, (2*idx)+2, level+1, depth)
+		leftData := node.Left.Value
+		rightData := node.Right.Value
+		hash_data := sha256.Sum256([]byte(leftData + rightData))
+		node.Value = fmt.Sprintf("%x", hash_data)
+		return node
+	}
+
+	txnIdx := idx - (1 << uint(depth)) - 1
+	var hash_data [32]byte
+
+	if txnIdx >= len {
+		// Padding the remaining transactions
+		hash_data = sha256.Sum256([]byte(txnList[len-1].Tnx_id))
+	} else {
+		// If this is a leaf node
+		hash_data = sha256.Sum256([]byte(txnList[txnIdx].Tnx_id))
+	}
+
+	node.Value = fmt.Sprintf("%x", hash_data)
 	return node
 }
 

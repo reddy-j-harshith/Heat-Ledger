@@ -28,4 +28,11 @@ var (
 	Blockchain   map[string]Block       = map[string]Block{}
 	Merkle_Roots map[string]*MerkleNode = map[string]*MerkleNode{}
 	Transactions map[string]Transaction = map[string]Transaction{}
+
+	// Mutex for the respective Databases
+	MempoolMutex sync.RWMutex // Mutex for the mempool
+	UTXOMutex    sync.RWMutex // Mutex for the UTXO set
+	BlockMutex   sync.RWMutex // Mutex for the blockchain
+	MerkleMutex  sync.RWMutex // Mutex for the Merkle roots
+	TransMutex   sync.RWMutex // Mutex for the transactions
 )
