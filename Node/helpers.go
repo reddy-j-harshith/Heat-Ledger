@@ -47,7 +47,7 @@ func merkleFunc(txnList []Transaction, treeIdx int, level int, depth int) *Merkl
 		return node
 	}
 
-	txnIdx := treeIdx - (1 << uint(depth)) - 1
+	txnIdx := treeIdx - (1 << uint(depth)) + 1
 	var hash_data [32]byte
 
 	if txnIdx >= len {
