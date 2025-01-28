@@ -62,7 +62,7 @@ type MerkleNode struct {
 // Leaf nodes will contain the hash of the txid, and left / right are set in NIL
 
 // Hash of the inputs, outputs and the timestamp
-func (txn Transaction) generateTxn() {
+func (txn *Transaction) generateTxn() {
 	var data string
 
 	for _, input := range txn.inputs {
