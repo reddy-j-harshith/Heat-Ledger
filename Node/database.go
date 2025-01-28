@@ -24,8 +24,8 @@ var (
 
 	// Blockchain database
 	Mempool      []Transaction          = []Transaction{}
-	Blockchain   map[string]Block       = map[string]Block{}
 	UTXO_SET     map[string]UTXO        = map[string]UTXO{}
+	Blockchain   map[string]Block       = map[string]Block{}
 	Merkle_Roots map[string]*MerkleNode = map[string]*MerkleNode{}
 	Transactions map[string]Transaction = map[string]Transaction{}
 )
