@@ -26,7 +26,7 @@ Things to consider - Functions Declared
 -> When a new block is being included to the local copy of the chain,
 	compress the hash values of the block when a new block is mined
 -> Selection of the transactions
--> Merkle tree making
+-> Merkle tree making - DONE
 -> After downloading all the blocks, the blockchain needs to be validated.
 -> Extract UTXOs while downloading the chain
 

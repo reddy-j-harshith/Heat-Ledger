@@ -23,7 +23,7 @@ var (
 	database map[string]map[int32]string = map[string]map[int32]string{}
 
 	// Blockchain database
-	Mempool      []Transaction          = []Transaction{}
+	Mempool      map[string]Transaction = map[string]Transaction{}
 	UTXO_SET     map[string]UTXO        = map[string]UTXO{}
 	Blockchain   map[string]Block       = map[string]Block{}
 	Merkle_Roots map[string]*MerkleNode = map[string]*MerkleNode{}

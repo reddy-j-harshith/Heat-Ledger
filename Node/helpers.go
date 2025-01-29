@@ -2,11 +2,46 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math"
 )
 
 func startUp() {
+
+}
+
+// Mining of a block
+func mineBlock() {
+
+}
+
+// Sending UTXOs
+func sendFunds() {
+
+	// Mention the amount to be sent
+	// Mention the public key of the receiver
+	// Sign the transaction
+
+}
+
+// Validation of a block by checking the previous hash, and all the transactions
+func validateBlock() {
+
+}
+
+// Validate whether the recieved blockchain copy has some inconsistencies
+func validateBlockchain() {
+
+}
+
+// Download the blockchain when the full node starts up
+func downloadBlockchain() {
+
+}
+
+// Compress the merkle tree
+func compressMerkle() {
 
 }
 
@@ -56,56 +91,38 @@ func merkleFunc(txnList []Transaction, treeIdx int, level int, depth int) *Merkl
 
 	if txnIdx >= len {
 		// Padding the remaining transactions
-		hash_data = sha256.Sum256([]byte(txnList[len-1].Tnx_id))
+		hash_data = sha256.Sum256([]byte(txnList[len-1].Txn_id))
 	} else {
 		// If this is a leaf node
-		hash_data = sha256.Sum256([]byte(txnList[txnIdx].Tnx_id))
+		hash_data = sha256.Sum256([]byte(txnList[txnIdx].Txn_id))
 	}
 
 	node.Value = fmt.Sprintf("%x", hash_data)
 	return node
 }
 
-// Mining of a block
-func mineBlock() {
-
-}
-
-// Sending UTXOs
-func sendFunds() {
-
-	// Mention the amount to be sent
-	// Mention the public key of the receiver
-	// Sign the transaction
-
-}
-
-// Validation of a block by checking the previous hash, and all the transactions
-func validateBlock() {
-
-}
-
-// Download the blockchain when the full node starts up
-func downloadBlockchain() {
-
-}
-
 // Remove the confirmed transactions from the mempool
 func removeTxns(block Block) {
+	if len(block.Transactions) == 0 {
+		return
+	}
 
+	for _, txn := range block.Transactions {
+		delete(Mempool, txn.Txn_id)
+	}
 }
 
-// Compress the merkle tree
-func compressMerkle() {
+// Create UTXO
+func handleUTXO(txn Transaction) {
+	for _, input := range txn.Inputs {
+		// Remove the UTXO from the UTXO set
+		utxoHashInput := sha256.Sum256([]byte(fmt.Sprintf("%s:%d", input.Txn_id, input.Index)))
+		delete(UTXO_SET, hex.EncodeToString(utxoHashInput[:]))
+	}
 
-}
-
-// Validate whether the recieved blockchain copy has some inconsistencies
-func validateBlockchain() {
-
-}
-
-// Creation of UTXO entries
-func storeUTXO() {
-
+	for idx, output := range txn.Outputs {
+		// Add the new UTXO into the UTXO set
+		utxoHashOutput := sha256.Sum256([]byte(fmt.Sprintf("%s:%d", txn.Txn_id, idx)))
+		UTXO_SET[hex.EncodeToString(utxoHashOutput[:])] = UTXO{txn.Txn_id, int32(idx), output.Value, output.Pubkey}
+	}
 }

@@ -14,31 +14,31 @@ type Message struct {
 }
 
 type UTXO struct {
-	txn_id string
-	index  int32
-	value  float64
-	pubkey string
+	Txn_id string  `json:"txn_id"`
+	Index  int32   `json:"index"`
+	Value  float64 `json:"value"`
+	Pubkey string  `json:"pub_key"`
 }
 
-type input struct {
+type Input struct {
 	Txn_id    string `json:"txn_id"`
 	Index     int32  `json:"index"`
 	Signature string `json:"sign"`
 }
 
-type output struct {
-	Pubkey string  `json:"pubkey"`
+type Output struct {
+	Pubkey string  `json:"pub_key"`
 	Value  float64 `json:"amount"`
 }
 
 type Transaction struct {
-	Tnx_id     string    `json:"txn_id"`
+	Txn_id     string    `json:"txn_id"`
 	Block_hash string    `json:"block_hash"`
 	In_sz      int32     `json:"in_sz"`
 	Out_sz     int32     `json:"out_sz"`
 	Fee        float64   `json:"fee"`
-	Inputs     []input   `json:"inputs"`
-	Outputs    []output  `json:"outputs"`
+	Inputs     []Input   `json:"inputs"`
+	Outputs    []Output  `json:"outputs"`
 	Timestamp  time.Time `json:"timestamp"`
 }
 
@@ -79,5 +79,5 @@ func (txn *Transaction) generateTxn() {
 
 	hash := sha256.Sum256([]byte(data))
 
-	txn.Tnx_id = fmt.Sprintf("%x", hash)
+	txn.Txn_id = fmt.Sprintf("%x", hash)
 }
