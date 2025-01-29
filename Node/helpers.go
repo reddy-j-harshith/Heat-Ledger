@@ -70,6 +70,10 @@ func mineBlock() {
 // Sending UTXOs
 func sendFunds() {
 
+	// Mention the amount to be sent
+	// Mention the public key of the receiver
+	// Sign the transaction
+
 }
 
 // Validation of a block by checking the previous hash, and all the transactions

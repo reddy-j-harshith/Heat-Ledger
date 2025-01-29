@@ -20,7 +20,7 @@ Local Database: - DONE
 -> map[string]*Merkle_Node: Merkle_Roots - Done
 -> map[string]Transaction: Transactions - Done
 
-Things to consider - Declared
+Things to consider - Functions Declared
 
 -> When a new block is being included to the local copy of the chain,
 	compress the hash values of the block when a new block is mined
@@ -87,3 +87,10 @@ Models: - DONE
 	 						   |-----> Change into Validate mode -----|
 							  /										   \
 		Recieve a block ------											----- Accept -----> Onto the next block
+
+
+On startup
+
+	-> Poplulate the UTXO set, the Blockchain database, create the merkle tree and populate the Merkle_Roots database
+	-> Request the mempool
+	-> The Transactions database
