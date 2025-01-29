@@ -1,5 +1,6 @@
 Users
 
+-> Implement the asymmetric encrpytion based identification - Done
 -> Maintaining a database of users - Asymmetric Key based - Taken Care by the Wallet - Done
 -> identification of users - Using the public key of the Users
 
