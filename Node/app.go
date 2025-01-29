@@ -111,9 +111,8 @@ func main() {
 
 	logger.Info("Node created with the ID: ", host.ID().String())
 
-	// Setting a handlers
-	host.SetStreamHandler(protocol.ID(config.ProtocolID+"/message"), messageProtocol)
-	host.SetStreamHandler(protocol.ID(config.ProtocolID+"/gossip"), broadcastMessage)
+	// Set the handlers for the node
+	SetNodeHandlers(host, config)
 
 	// Extract Bootstrap peers
 	ctx := context.Background()
