@@ -1,6 +1,6 @@
 Users
 
--> Maintaining a database of users - Assymetric Key based - Taken Care by the Wallet - Done
+-> Maintaining a database of users - Asymmetric Key based - Taken Care by the Wallet - Done
 -> identification of users - Using the public key of the Users
 
 Blockchain specific actions
@@ -12,12 +12,12 @@ Blockchain specific actions
 -> Maintain a difficulty stat for the mining difficulty
 -> Gossip the next transactions to the other nodes, so that new txns. can be included in the mempool
 
-Local Database: - Done
+Local Database: - DONE
 
 -> Blockchain copy - Done
 -> UTXO Database - Done
 -> Maintaining a mempool of unconfirmed transactions -> Slice - Done
--> map[string]Merkle_Node: Merkle_Roots - Done
+-> map[string]*Merkle_Node: Merkle_Roots - Done
 -> map[string]Transaction: Transactions - Done
 
 Things to consider - Declared
@@ -29,7 +29,7 @@ Things to consider - Declared
 -> After downloading all the blocks, the blockchain needs to be validated.
 -> Extract UTXOs while downloading the chain
 
-Models: - Done
+Models: - DONE
 	
 	type UTXO struct {
 		txn_id string
@@ -77,7 +77,7 @@ Models: - Done
 		5) Set the left and the right of the nodes to NIL for the leaves
 		6) After calculating the hash of the root and store it using a hashmap:
 
-			map[string]Merkle_Node
+			map[string]*Merkle_Node
 
 		7) Add this hash value to the block
 
