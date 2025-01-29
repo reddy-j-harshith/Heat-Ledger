@@ -6,6 +6,10 @@ import (
 	"math"
 )
 
+func startUp() {
+
+}
+
 // Creation of a merkle tree and storage
 func buildMerkle(txnList []Transaction) string {
 	if len(txnList) == 0 {
