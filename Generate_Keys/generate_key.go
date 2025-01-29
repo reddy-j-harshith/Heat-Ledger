@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// Generate an Ed25519 key pair
-	privKey, _, err := crypto.GenerateKeyPair(crypto.Ed25519, 256)
+	privKey, _, err := crypto.GenerateKeyPair(crypto.Secp256k1, 256)
 	if err != nil {
 		log.Fatal("Failed to generate key pair:", err)
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	"github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
@@ -79,12 +81,26 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Println("Enter the private key:")
+	reader := bufio.NewReader(os.Stdin)
+	privKeyString, _ := reader.ReadString('\n')
+	privKeyString = strings.TrimSpace(privKeyString)
+	privKeyBytes, _ := hex.DecodeString(privKeyString)
+
+	privKey, _ := crypto.UnmarshalPrivateKey(privKeyBytes)
+
 	// Creating the current node
 	host, err := libp2p.New(
+		libp2p.Identity(privKey),
 		libp2p.ListenAddrs(
 			[]multiaddr.Multiaddr(config.ListenAddresses)...,
 		),
 	)
+
+	// Display the public key
+	pubKey := privKey.GetPublic()
+	pubKeyBytes, _ := pubKey.Raw()
+	fmt.Println("Public Key (Hex):", hex.EncodeToString(pubKeyBytes))
 
 	// Assigning this user globally for the node
 	User = host
@@ -173,7 +189,7 @@ func main() {
 		}
 	}()
 
-	reader := bufio.NewReader(os.Stdin)
+	reader = bufio.NewReader(os.Stdin)
 	var userStream network.Stream = nil
 
 	for {
