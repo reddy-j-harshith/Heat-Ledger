@@ -42,6 +42,14 @@ func downloadProtocol(stream network.Stream) {
 
 }
 
+func downloadBlock(stream network.Stream) {
+
+}
+
+func downloadTxn(stream network.Stream) {
+
+}
+
 // Reciever Stream handlers
 func blockProtocol(stream network.Stream) {
 
