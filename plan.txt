@@ -95,3 +95,6 @@ On startup
 	-> Poplulate the UTXO set, the Blockchain database, create the merkle tree and populate the Merkle_Roots database
 	-> Request the mempool
 	-> The Transactions database
+
+TODO: Graceful shutdown
+	  Add the user interaction at the main function
