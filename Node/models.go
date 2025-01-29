@@ -43,13 +43,14 @@ type Transaction struct {
 }
 
 type Block struct {
-	Block_hash    string // Primary Key
-	Block_height  int32
-	Previous_hash string
-	Nonce         int32
-	Difficulty    int32
-	Merkle_hash   string // Obtain the merkle root from the target node and send the list of transactions to build the local merkle tree
-	Timestamp     time.Time
+	Block_hash    string        `json:"block_hash"`
+	Block_height  int32         `json:"block_height"`
+	Previous_hash string        `json:"previous_hash"`
+	Nonce         int32         `json:"nonce"`
+	Difficulty    int32         `json:"difficulty"`
+	Merkle_hash   string        `json:"merkle_hash"` // Obtain the merkle root from the target node and send the list of transactions to build the local merkle tree
+	Timestamp     time.Time     `json:"timestamp"`
+	Transactions  []Transaction `json:"transactions"`
 }
 
 type MerkleNode struct {
