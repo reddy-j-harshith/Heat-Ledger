@@ -155,6 +155,7 @@ func main() {
 	// Initialize and poplutate the databases
 	startUp()
 
+	// For the user communication
 	reader = bufio.NewReader(os.Stdin)
 	var userStream network.Stream = nil
 

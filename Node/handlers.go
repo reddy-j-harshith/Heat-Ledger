@@ -30,13 +30,16 @@ func broadcastBlock(stream network.Stream) {
 
 // Export Request handlers
 func exportBlockchain(stream network.Stream) {
-
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	go downloadBlockchain(rw, stream)
 }
 
 func exportBlock(stream network.Stream) {
-
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	go downloadBlock(rw, stream)
 }
 
 func exportTransaction(stream network.Stream) {
-
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	go downloadTransaction(rw, stream)
 }
