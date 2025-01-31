@@ -134,7 +134,7 @@ func main() {
 					continue
 				}
 
-				if _, exists := peerSet[peer.ID]; exists {
+				if _, exists := peerSet[peer.ID.String()]; exists {
 					continue
 				}
 
@@ -143,7 +143,7 @@ func main() {
 				} else {
 					logger.Info("Connected to peer:", peer.ID.String())
 					peerArray = append(peerArray, peer)
-					peerSet[peer.ID] = true
+					peerSet[peer.ID.String()] = peer
 				}
 			}
 

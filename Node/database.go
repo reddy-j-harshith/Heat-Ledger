@@ -11,12 +11,12 @@ import (
 // Global variables
 var (
 	// Functional variables
-	User        host.Host                             // Current User Node
-	config      Config                                // Configuration
-	peerSet     map[peer.ID]bool = map[peer.ID]bool{} // Set of neighbors
-	peerMutex   sync.RWMutex                          // Mutex for the message database
-	peerArray   []peer.AddrInfo  = []peer.AddrInfo{}  // Array of neighbors
-	kademliaDHT *dht.IpfsDHT                          // Local DHT
+	User        host.Host                                             // Current User Node
+	config      Config                                                // Configuration
+	peerMutex   sync.RWMutex                                          // Mutex for the message database
+	kademliaDHT *dht.IpfsDHT                                          // Local DHT
+	peerArray   []peer.AddrInfo          = []peer.AddrInfo{}          // Array of neighbors
+	peerSet     map[string]peer.AddrInfo = map[string]peer.AddrInfo{} // Set of neighbors
 
 	// Message database
 	m_id     int32                       = 1
