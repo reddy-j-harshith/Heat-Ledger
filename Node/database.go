@@ -12,6 +12,7 @@ import (
 var (
 	// Functional variables
 	User        host.Host                             // Current User Node
+	config      Config                                // Configuration
 	peerSet     map[peer.ID]bool = map[peer.ID]bool{} // Set of neighbors
 	peerMutex   sync.RWMutex                          // Mutex for the message database
 	peerArray   []peer.AddrInfo  = []peer.AddrInfo{}  // Array of neighbors
@@ -23,6 +24,7 @@ var (
 	database map[string]map[int32]string = map[string]map[int32]string{}
 
 	// Blockchain database
+	Latest_Block string                 = ""
 	Mempool      map[string]Transaction = map[string]Transaction{}
 	UTXO_SET     map[string]UTXO        = map[string]UTXO{}
 	Blockchain   map[string]Block       = map[string]Block{}
