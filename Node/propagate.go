@@ -212,8 +212,8 @@ func propagateBlock(rw *bufio.ReadWriter, strm network.Stream) {
 		if !exists {
 			err := validateBlock(block) // Block validation
 			if err != nil {
-				fmt.Println("Block Validation Failed:", err)
-				continue
+				fmt.Println("Block Validation Failed: Stopping propagation", err)
+				return
 			}
 
 			removeTxns(block)   // Remove Transactions from Mempool & Update UTXO
