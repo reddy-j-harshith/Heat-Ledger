@@ -26,35 +26,6 @@ import (
 
 var logger = log.Logger("rendezvous")
 
-func (m *Message) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&struct {
-		Sender     string `json:"sender"`
-		Message_Id int32  `json:"m_id"`
-		Content    string `json:"content"`
-	}{
-		Sender:     m.Sender,
-		Message_Id: m.Message_Id,
-		Content:    m.Content,
-	})
-}
-
-func (m *Message) UnmarshalJSON(data []byte) error {
-	aux := &struct {
-		Sender     string `json:"sender"`
-		Message_Id int32  `json:"m_id"`
-		Content    string `json:"content"`
-	}{}
-
-	if err := json.Unmarshal(data, aux); err != nil {
-		return err
-	}
-
-	m.Sender = aux.Sender
-	m.Message_Id = aux.Message_Id
-	m.Content = aux.Content
-	return nil
-}
-
 func readData(rw *bufio.ReadWriter) {
 	for {
 		str, err := rw.ReadString('\n')
