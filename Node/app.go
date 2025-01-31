@@ -47,10 +47,7 @@ func main() {
 	log.SetLogLevel("rendezvous", "info")
 
 	// Parsing the flags
-	config, err := ParseFlags()
-	if err != nil {
-		panic(err)
-	}
+	config, _ = ParseFlags()
 
 	fmt.Println("Enter the private key:")
 	reader := bufio.NewReader(os.Stdin)
@@ -83,7 +80,7 @@ func main() {
 	logger.Info("Node created with the ID: ", host.ID().String())
 
 	// Set the handlers for the node
-	SetNodeHandlers(host, config)
+	SetNodeHandlers()
 
 	// Extract Bootstrap peers
 	ctx := context.Background()
