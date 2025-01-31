@@ -8,33 +8,24 @@ import (
 
 // Messaging Stream Handlers
 func messageProtocol(stream network.Stream) {
-
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
 	go readData(rw)
-	// go writeData(rw)
 }
 
 // Propagation handlers
 func broadcastMessage(stream network.Stream) {
-
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	go propagateMessage(rw, stream)
-
 }
 
 func broadcastTxn(stream network.Stream) {
-
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	go propagateTxn(rw, stream)
-
 }
 
 func broadcastBlock(stream network.Stream) {
-
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	go propagateBlock(rw, stream)
-
 }
 
 // Export Request handlers
