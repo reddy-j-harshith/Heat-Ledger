@@ -184,7 +184,7 @@ func removeTxns(block Block) {
 	}
 }
 
-// Create UTXO
+// Add and Remove UTXOs
 func handleUTXO(txn Transaction) {
 	for _, input := range txn.Inputs {
 		// Remove the UTXO from the UTXO set
