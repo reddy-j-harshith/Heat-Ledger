@@ -10,7 +10,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
@@ -225,21 +224,6 @@ func mineBlock() {
 
 // Validate whether the recieved blockchain copy has some inconsistencies
 func validateBlockchain() {
-
-}
-
-// Download the blockchain when the full node starts up
-func downloadBlockchain(rw *bufio.ReadWriter, strm network.Stream) {
-
-}
-
-// Download a block
-func downloadBlock(rw *bufio.ReadWriter, strm network.Stream) {
-
-}
-
-// Download a transaction
-func downloadTransaction(rw *bufio.ReadWriter, strm network.Stream) {
 
 }
 
