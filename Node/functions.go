@@ -1,48 +1,116 @@
 package main
 
 import (
+	"bufio"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math"
+	"time"
+
+	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
-func startUp() {
-
-}
-
-// Mining of a block
-func mineBlock() {
-
-}
-
 // Sending UTXOs
-func sendFunds() {
+func sendFunds(utxo []string, pubKey []string, amount []float64, Fee float64) {
 
-	// Mention the amount to be sent
-	// Mention the public key of the receiver
-	// Sign the transaction
+	inputs := make([]Input, len(utxo))
+	outputs := make([]Output, len(pubKey))
 
+	for idx, utxoHash := range utxo {
+
+		UTXOMutex.RLock()
+		utxoInput := UTXO_SET[utxoHash]
+		UTXOMutex.RUnlock()
+
+		inputs[idx] = Input{
+			Txn_id: utxoInput.Txn_id,
+			Index:  int32(utxoInput.Value),
+		}
+	}
+
+	for idx, key := range pubKey {
+		outputs[idx] = Output{
+			Pubkey: key,
+			Value:  amount[idx],
+		}
+	}
+
+	transaction := &Transaction{
+		In_sz:     int32(len(inputs)),
+		Out_sz:    int32(len(outputs)),
+		Fee:       Fee,
+		Inputs:    inputs,
+		Outputs:   outputs,
+		Timestamp: time.Now(),
+	}
+
+	transaction.generateTxn()
+
+	// Add the transaction to the mempool
+	defer func() {
+		MempoolMutex.Lock()
+		if _, exists := Mempool[transaction.Txn_id]; !exists {
+			Mempool[transaction.Txn_id] = *transaction
+		}
+		MempoolMutex.Unlock()
+	}()
+
+	peerMutex.RLock()
+	peers := peerArray
+	peerMutex.RUnlock()
+
+	for _, peer := range peers {
+		stream, err := User.NewStream(
+			context.Background(),
+			peer.ID,
+			protocol.ID(config.ProtocolID+"/broadcast/transaction"),
+		)
+
+		if err != nil {
+			fmt.Println("Failed to create a stream:", err)
+			continue
+		}
+
+		rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+
+		data, err := json.Marshal(transaction)
+		if err != nil {
+			fmt.Println("Failed to serialize message:", err)
+			stream.Close()
+			continue
+		}
+
+		_, err = rw.WriteString(string(data) + "\n")
+		if err != nil {
+			fmt.Println("Failed to send message to peer:", peer.ID, err)
+			stream.Close()
+			continue
+		}
+
+		// Flush the buffer to ensure data is sent
+		err = rw.Flush()
+		if err != nil {
+			fmt.Println("Failed to flush data to peer:", peer.ID, err)
+			stream.Close()
+			continue
+		}
+		stream.Close()
+	}
 }
 
-// Validation of a block by checking the previous hash, and all the transactions
-func validateBlock() {
-
-}
-
-// Validate whether the recieved blockchain copy has some inconsistencies
-func validateBlockchain() {
-
-}
-
-// Download the blockchain when the full node starts up
-func downloadBlockchain() {
-
-}
-
-// Compress the merkle tree
+// Compress the merkle tree of the previous block
 func compressMerkle() {
+	previous_block := Blockchain[Latest_Block]
 
+	MerkleMutex.RLock()
+	previousMerkle := Merkle_Roots[previous_block.Merkle_hash]
+	MerkleMutex.RUnlock()
+
+	// Compress the merkle tree
+	compressMerkleFunc(previousMerkle)
 }
 
 // Creation of a merkle tree and storage
@@ -108,7 +176,11 @@ func removeTxns(block Block) {
 	}
 
 	for _, txn := range block.Transactions {
+		handleUTXO(txn)
+
+		MempoolMutex.Lock()
 		delete(Mempool, txn.Txn_id)
+		MempoolMutex.Unlock()
 	}
 }
 
@@ -117,12 +189,69 @@ func handleUTXO(txn Transaction) {
 	for _, input := range txn.Inputs {
 		// Remove the UTXO from the UTXO set
 		utxoHashInput := sha256.Sum256([]byte(fmt.Sprintf("%s:%d", input.Txn_id, input.Index)))
+
+		UTXOMutex.Lock()
 		delete(UTXO_SET, hex.EncodeToString(utxoHashInput[:]))
+		UTXOMutex.Unlock()
 	}
 
 	for idx, output := range txn.Outputs {
 		// Add the new UTXO into the UTXO set
 		utxoHashOutput := sha256.Sum256([]byte(fmt.Sprintf("%s:%d", txn.Txn_id, idx)))
+
+		UTXOMutex.Lock()
 		UTXO_SET[hex.EncodeToString(utxoHashOutput[:])] = UTXO{txn.Txn_id, int32(idx), output.Value, output.Pubkey}
+		UTXOMutex.Unlock()
 	}
+}
+
+// TODO
+func startUp() {
+
+	// Create the genesis block
+	// Download the UTXO set
+	// Download the blockchain
+	// Download the mempool
+	// Download the transactions
+	// Create the merkle roots
+
+}
+
+// Mining of a block
+func mineBlock() {
+
+}
+
+// Validate whether the recieved blockchain copy has some inconsistencies
+func validateBlockchain() {
+
+}
+
+// Download the blockchain when the full node starts up
+func downloadBlockchain() {
+
+}
+
+func compressMerkleFunc(node *MerkleNode) {
+	if node.Left == nil && node.Right == nil {
+		return
+	}
+}
+
+// Validation of a block by checking the previous hash, and all the transactions
+func validateBlock(block Block) error {
+	// Check if the previous hash is correct
+	BlockMutex.RLock()
+	previousBlock, exists := Blockchain[block.Previous_hash]
+	BlockMutex.RUnlock()
+
+	if previousBlock.Block_hash != block.Previous_hash ||
+		!exists ||
+		block.Block_height != previousBlock.Block_height+1 {
+		return fmt.Errorf("previous hash does not match")
+	}
+
+	// TODO: Validate the transactions
+
+	return nil
 }
