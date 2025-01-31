@@ -45,7 +45,7 @@ func readData(rw *bufio.ReadWriter) {
 func main() {
 	log.SetAllLoggers(log.LevelWarn)
 	log.SetLogLevel("rendezvous", "info")
-
+	var err error
 	// Parsing the flags
 	config, _ = ParseFlags()
 
@@ -58,26 +58,22 @@ func main() {
 	privKey, _ := crypto.UnmarshalPrivateKey(privKeyBytes)
 
 	// Creating the current node
-	host, err := libp2p.New(
+	User, err = libp2p.New(
 		libp2p.Identity(privKey),
 		libp2p.ListenAddrs(
 			[]multiaddr.Multiaddr(config.ListenAddresses)...,
 		),
 	)
+	if err != nil {
+		panic(err)
+	}
 
 	// Display the public key
 	pubKey := privKey.GetPublic()
 	pubKeyBytes, _ := pubKey.Raw()
 	fmt.Println("Public Key (Hex):", hex.EncodeToString(pubKeyBytes))
 
-	// Assigning this user globally for the node
-	User = host
-
-	if err != nil {
-		panic(err)
-	}
-
-	logger.Info("Node created with the ID: ", host.ID().String())
+	logger.Info("Node created with the ID: ", User.ID().String())
 
 	// Set the handlers for the node
 	SetNodeHandlers()
@@ -94,7 +90,7 @@ func main() {
 
 	// Create a local dht with custom buket size
 	kademliaDHT, err = dht.New(
-		ctx, host,
+		ctx, User,
 		dht.BootstrapPeers(bootstrapPeers...),
 		dht.ProtocolPrefix("/custom-dht"),
 		dht.BucketSize(5),
@@ -134,7 +130,7 @@ func main() {
 			}
 
 			for peer := range peerChan {
-				if peer.ID == host.ID() {
+				if peer.ID == User.ID() {
 					continue
 				}
 
@@ -142,7 +138,7 @@ func main() {
 					continue
 				}
 
-				if err := host.Connect(ctx, peer); err != nil {
+				if err := User.Connect(ctx, peer); err != nil {
 					logger.Warn("Failed to connect to peer:", err)
 				} else {
 					logger.Info("Connected to peer:", peer.ID.String())
@@ -208,7 +204,7 @@ func main() {
 					logger.Info("Connecting to user")
 
 					// Establish the Stream
-					newStream, err := host.NewStream(ctx, peerArray[index].ID, protocol.ID(config.ProtocolID+"/message"))
+					newStream, err := User.NewStream(ctx, peerArray[index].ID, protocol.ID(config.ProtocolID+"/message"))
 					if err != nil {
 						println("Error occurred creating a stream!\n")
 						continue
@@ -240,7 +236,7 @@ func main() {
 				}
 
 				// Send the message
-				_, err = rw.WriteString(fmt.Sprintf("> Message from: %s => %s\n", host.ID().String(), sendData))
+				_, err = rw.WriteString(fmt.Sprintf("> Message from: %s => %s\n", User.ID().String(), sendData))
 				if err != nil {
 					fmt.Println("Error writing to buffer:", err)
 					continue
@@ -277,7 +273,7 @@ func main() {
 
 			// Create a new Message
 			message := Message{
-				Sender:     host.ID().String(),
+				Sender:     User.ID().String(),
 				Message_Id: m_id,
 				Content:    sendData,
 			}
@@ -285,7 +281,7 @@ func main() {
 			// Send the message to all connected peers (Gossip)
 			for _, peer := range peerArray {
 				// Create a new stream for the peer
-				stream, err := host.NewStream(ctx, peer.ID, protocol.ID(config.ProtocolID+"/gossip"))
+				stream, err := User.NewStream(ctx, peer.ID, protocol.ID(config.ProtocolID+"/gossip"))
 				if err != nil {
 					fmt.Println("Failed to create stream with peer:", peer.ID)
 					continue
