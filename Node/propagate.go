@@ -34,40 +34,26 @@ func propagateMessage(rw *bufio.ReadWriter, strm network.Stream) {
 			continue
 		}
 
-		peerMutex.RLock()
-		small, exist := least[message.Sender]
-		peerMutex.RUnlock()
-
-		if !exist || message.Message_Id > small {
-			peerMutex.Lock()
+		peerMutex.Lock()
+		if small, exist := least[message.Sender]; !exist || message.Message_Id > small {
 			least[message.Sender] = message.Message_Id
-			peerMutex.Unlock()
 		} else {
-			// Skip as the message might be very old or already reached
+			peerMutex.Unlock()
 			continue
 		}
+		peerMutex.Unlock()
 
 		// Database Access with Mutex
-		peerMutex.RLock()
-		_, exists := database[message.Sender]
-		peerMutex.RUnlock()
-
-		if !exists {
-			peerMutex.Lock()
-			database[message.Sender] = make(map[int32]string)
-			peerMutex.Unlock()
-		}
-
-		peerMutex.RLock()
-		_, exists = database[message.Sender][message.Message_Id]
-		peerMutex.RUnlock()
-
-		if exists {
-			continue
-		}
-
 		peerMutex.Lock()
-		database[message.Sender][message.Message_Id] = message.Content
+		if _, exists := database[message.Sender]; !exists {
+			database[message.Sender] = make(map[int32]string)
+			if _, exists := database[message.Sender][message.Message_Id]; !exists {
+				database[message.Sender][message.Message_Id] = message.Content
+			} else {
+				peerMutex.Unlock()
+				continue
+			}
+		}
 		peerMutex.Unlock()
 
 		fmt.Printf("\x1b[32m> Message Sent by: %s\n> Message: %s\n> Sent from %s\x1b[0m\n", message.Sender, message.Content, strm.Conn().RemotePeer())
@@ -140,17 +126,14 @@ func propagateTxn(rw *bufio.ReadWriter, strm network.Stream) {
 		}
 
 		// Add the transaction to the mempool
-		MempoolMutex.RLock()
-		_, exists := Mempool[transaction.Txn_id]
-		MempoolMutex.RUnlock()
-
-		if !exists {
-			MempoolMutex.Lock()
+		MempoolMutex.Lock()
+		if _, exists := Mempool[transaction.Txn_id]; !exists {
 			Mempool[transaction.Txn_id] = transaction
-			MempoolMutex.Unlock()
 		} else {
+			MempoolMutex.Unlock()
 			continue
 		}
+		MempoolMutex.Unlock()
 
 		fmt.Printf("\x1b[32m> New Txn Added to Mempool\n> Txn_id: %s\n> Sent from %s\x1b[0m\n", transaction.Txn_id, strm.Conn().RemotePeer())
 
@@ -227,7 +210,6 @@ func propagateBlock(rw *bufio.ReadWriter, strm network.Stream) {
 		BlockMutex.RUnlock()
 
 		if !exists {
-
 			err := validateBlock(block) // Block validation
 			if err != nil {
 				fmt.Println("Block Validation Failed:", err)
