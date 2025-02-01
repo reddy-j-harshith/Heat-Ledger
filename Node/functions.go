@@ -14,10 +14,10 @@ import (
 )
 
 // Sending UTXOs
-func sendFunds(utxo []string, pubKey []string, amount []float64, Fee float64) {
+func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) error {
 
 	inputs := make([]Input, len(utxo))
-	outputs := make([]Output, len(pubKey))
+	outputs := make([]Output, len(nodeID))
 
 	for idx, utxoHash := range utxo {
 
@@ -31,7 +31,7 @@ func sendFunds(utxo []string, pubKey []string, amount []float64, Fee float64) {
 		}
 	}
 
-	for idx, key := range pubKey {
+	for idx, key := range nodeID {
 		outputs[idx] = Output{
 			Pubkey: key,
 			Value:  amount[idx],
@@ -41,7 +41,7 @@ func sendFunds(utxo []string, pubKey []string, amount []float64, Fee float64) {
 	transaction := &Transaction{
 		In_sz:     int32(len(inputs)),
 		Out_sz:    int32(len(outputs)),
-		Fee:       Fee,
+		Fee:       fee,
 		Inputs:    inputs,
 		Outputs:   outputs,
 		Timestamp: time.Now(),
@@ -49,18 +49,11 @@ func sendFunds(utxo []string, pubKey []string, amount []float64, Fee float64) {
 
 	transaction.generateTxn()
 
-	// Add the transaction to the mempool
-	defer func() {
-		MempoolMutex.Lock()
-		if _, exists := Mempool[transaction.Txn_id]; !exists {
-			Mempool[transaction.Txn_id] = *transaction
-		}
-		MempoolMutex.Unlock()
-	}()
-
 	peerMutex.RLock()
 	peers := peerArray
 	peerMutex.RUnlock()
+
+	success := false
 
 	for _, peer := range peers {
 		stream, err := User.NewStream(
@@ -98,7 +91,21 @@ func sendFunds(utxo []string, pubKey []string, amount []float64, Fee float64) {
 			continue
 		}
 		stream.Close()
+		success = true
 	}
+
+	if !success {
+		return fmt.Errorf("failed to communicate with any peers")
+	}
+
+	// Add the transaction to the mempool
+	MempoolMutex.Lock()
+	if _, exists := Mempool[transaction.Txn_id]; !exists {
+		Mempool[transaction.Txn_id] = *transaction
+	}
+	MempoolMutex.Unlock()
+
+	return nil
 }
 
 // Creation of a merkle tree and storage
