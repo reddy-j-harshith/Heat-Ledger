@@ -161,7 +161,7 @@ func main() {
 
 	for {
 		// Mode Selection: Direct Message or Gossip Mode
-		print("> Select Mode (1: Direct Message, 2: Gossip Mode, 3: Exit)\n> ")
+		print("> Select Mode (1: Send Transaction, 2: Gossip Mode, 3: Exit)\n> ")
 		mode, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Println("Error reading the input")
@@ -184,7 +184,7 @@ func main() {
 				if userStream == nil {
 
 					// Taking the input to select user index
-					print("> Enter user index\n>")
+					print("> Enter User Node ID\n>")
 					input, err := reader.ReadString('\n')
 					if err != nil {
 						fmt.Println("Error reading the input")
@@ -193,19 +193,16 @@ func main() {
 
 					input = strings.TrimSpace(input)
 
-					index, _ := strconv.ParseInt(input, 10, 64)
-
-					fmt.Println(index)
-
-					if index >= int64(len(peerArray)) {
-						println("Please Enter a valid index!!")
-						continue
-					}
-
 					logger.Info("Connecting to user")
 
 					// Establish the Stream
-					newStream, err := User.NewStream(ctx, peerArray[index].ID, protocol.ID(config.ProtocolID+"/message"))
+					targetUser, exists := peerSet[input]
+
+					if !exists {
+						println("User not found!")
+						continue
+					}
+					newStream, err := User.NewStream(ctx, targetUser.ID, protocol.ID(config.ProtocolID+"/message"))
 					if err != nil {
 						println("Error occurred creating a stream!\n")
 						continue
@@ -214,41 +211,52 @@ func main() {
 					// Set the current stream
 					userStream = newStream
 
-					logger.Info("Connected to: ", peerArray[index].ID.String())
+					logger.Info("Connected to: ", targetUser.ID.String())
 				}
 
-				println("> Enter Message for the user (type 'Cancel' to go back to mode selection)")
+				println("> Enter UTXO hash (type 'Cancel' to go back to mode selection)")
 
-				rw := bufio.NewReadWriter(bufio.NewReader(userStream), bufio.NewWriter(userStream))
+				// Taking the input to send a transaction
 
-				fmt.Print("> ")
-				sendData, err := reader.ReadString('\n')
-				if err != nil {
-					fmt.Println("Error reading from stdin:", err)
-					return
+				// Entering number of inputs, Outputs, Fee
+				println("> Enter Number of Inputs")
+				read, _ := reader.ReadString('\n')
+				read = strings.TrimSpace(read)
+				inputs, _ := strconv.ParseInt(read, 10, 8)
+
+				read, _ = reader.ReadString('\n')
+				read = strings.TrimSpace(read)
+				outputs, _ := strconv.ParseInt(read, 10, 64)
+
+				read, _ = reader.ReadString('\n')
+				read = strings.TrimSpace(read)
+				fee, _ := strconv.ParseFloat(read, 64)
+
+				utxos := make([]string, 0)
+				nodeID := make([]string, 0)
+				amounts := make([]float64, 0)
+
+				for i := 0; i < int(inputs); i++ {
+					println("> Enter UTXO hash")
+					utxo, _ := reader.ReadString('\n')
+					utxo = strings.TrimSpace(utxo)
+					utxos = append(utxos, utxo)
 				}
 
-				sendData = strings.TrimSpace(sendData)
+				for i := 0; i < int(outputs); i++ {
+					println("> Enter Node ID")
+					id, _ := reader.ReadString('\n')
+					id = strings.TrimSpace(id)
+					nodeID = append(nodeID, id)
 
-				if sendData == "Cancel" {
-					userStream.Close()
-					userStream = nil
-					break
+					println("> Enter Amount")
+					amt, _ := reader.ReadString('\n')
+					amt = strings.TrimSpace(amt)
+					amount, _ := strconv.ParseFloat(amt, 64)
+					amounts = append(amounts, amount)
 				}
 
-				// Send the message
-				_, err = rw.WriteString(fmt.Sprintf("> Message from: %s => %s\n", User.ID().String(), sendData))
-				if err != nil {
-					fmt.Println("Error writing to buffer:", err)
-					continue
-				}
-
-				// Flush the errors
-				err = rw.Flush()
-				if err != nil {
-					fmt.Println("Error flushing buffer:", err)
-					continue
-				}
+				sendFunds(utxos, nodeID, amounts, fee)
 			}
 		}
 
