@@ -216,8 +216,7 @@ func propagateBlock(rw *bufio.ReadWriter, strm network.Stream) {
 				return
 			}
 
-			removeTxns(block)   // Remove Transactions from Mempool & Update UTXO
-			go compressMerkle() // Compress the Merkle Tree of the previous block
+			removeTxns(block) // Remove Transactions from Mempool & Update UTXO
 			go buildMerkle(block.Transactions)
 			Latest_Block = block.Block_hash
 

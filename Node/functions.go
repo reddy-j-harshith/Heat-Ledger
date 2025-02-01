@@ -101,18 +101,6 @@ func sendFunds(utxo []string, pubKey []string, amount []float64, Fee float64) {
 	}
 }
 
-// Compress the merkle tree of the previous block
-func compressMerkle() {
-	previous_block := Blockchain[Latest_Block]
-
-	MerkleMutex.RLock()
-	previousMerkle := Merkle_Roots[previous_block.Merkle_hash]
-	MerkleMutex.RUnlock()
-
-	// Compress the merkle tree
-	compressMerkleFunc(previousMerkle)
-}
-
 // Creation of a merkle tree and storage
 func buildMerkle(txnList []Transaction) string {
 	if len(txnList) == 0 {
@@ -225,12 +213,6 @@ func mineBlock() {
 // Validate whether the recieved blockchain copy has some inconsistencies
 func validateBlockchain() {
 
-}
-
-func compressMerkleFunc(node *MerkleNode) {
-	if node.Left == nil && node.Right == nil {
-		return
-	}
 }
 
 // Validation of a block by checking the previous hash, and all the transactions
