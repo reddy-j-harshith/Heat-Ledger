@@ -180,84 +180,85 @@ func main() {
 		// Handle Direct Message Mode
 		if mode == "1" {
 
-			// Direct Message logic (same as before)
-			for {
-				if userStream == nil {
+			if userStream == nil {
 
-					// Taking the input to select user index
-					print("> Enter User Node ID\n>")
-					input, err := reader.ReadString('\n')
-					if err != nil {
-						fmt.Println("Error reading the input")
-						continue
-					}
-
-					input = strings.TrimSpace(input)
-
-					logger.Info("Connecting to user")
-
-					// Establish the Stream
-					targetUser, exists := peerSet[input]
-
-					if !exists {
-						println("User not found!")
-						continue
-					}
-					newStream, err := User.NewStream(ctx, targetUser.ID, protocol.ID(config.ProtocolID+"/message"))
-					if err != nil {
-						println("Error occurred creating a stream!\n")
-						continue
-					}
-
-					// Set the current stream
-					userStream = newStream
-
-					logger.Info("Connected to: ", targetUser.ID.String())
+				// Taking the input to select User Node ID
+				print("> Enter User Node ID\n>")
+				input, err := reader.ReadString('\n')
+				if err != nil {
+					fmt.Println("Error reading the input")
+					continue
 				}
 
-				println("> Enter UTXO hash (type 'Cancel' to go back to mode selection)")
+				input = strings.TrimSpace(input)
 
-				// Taking the input to send a transaction
+				logger.Info("Connecting to user")
 
-				// Entering number of inputs, Outputs, Fee
-				println("> Enter Number of Inputs")
-				read, _ := reader.ReadString('\n')
-				read = strings.TrimSpace(read)
-				inputs, _ := strconv.ParseInt(read, 10, 8)
+				// Establish the Stream
+				targetUser, exists := peerSet[input]
 
-				read, _ = reader.ReadString('\n')
-				read = strings.TrimSpace(read)
-				outputs, _ := strconv.ParseInt(read, 10, 64)
-
-				read, _ = reader.ReadString('\n')
-				read = strings.TrimSpace(read)
-				fee, _ := strconv.ParseFloat(read, 64)
-
-				utxos := make([]string, 0)
-				nodeID := make([]string, 0)
-				amounts := make([]float64, 0)
-
-				for i := 0; i < int(inputs); i++ {
-					println("> Enter UTXO hash")
-					utxo, _ := reader.ReadString('\n')
-					utxo = strings.TrimSpace(utxo)
-					utxos = append(utxos, utxo)
+				if !exists {
+					println("User not found!")
+					continue
+				}
+				newStream, err := User.NewStream(ctx, targetUser.ID, protocol.ID(config.ProtocolID+"/message"))
+				if err != nil {
+					println("Error occurred creating a stream!\n")
+					continue
 				}
 
-				for i := 0; i < int(outputs); i++ {
-					println("> Enter Node ID")
-					id, _ := reader.ReadString('\n')
-					id = strings.TrimSpace(id)
-					nodeID = append(nodeID, id)
+				// Set the current stream
+				userStream = newStream
 
-					println("> Enter Amount")
-					amt, _ := reader.ReadString('\n')
-					amt = strings.TrimSpace(amt)
-					amount, _ := strconv.ParseFloat(amt, 64)
-					amounts = append(amounts, amount)
-				}
+				logger.Info("Connected to: ", targetUser.ID.String())
+			}
 
-				sendFunds(utxos, nodeID, amounts, fee)
+			// Entering number of inputs, Outputs, Fee
+			println("> Enter Number of Inputs")
+			read, _ := reader.ReadString('\n')
+			read = strings.TrimSpace(read)
+			inputs, _ := strconv.ParseInt(read, 10, 8)
+
+			println("> Enter Number of Outputs")
+			read, _ = reader.ReadString('\n')
+			read = strings.TrimSpace(read)
+			outputs, _ := strconv.ParseInt(read, 10, 64)
+
+			println("> Enter Fee")
+			read, _ = reader.ReadString('\n')
+			read = strings.TrimSpace(read)
+			fee, _ := strconv.ParseFloat(read, 64)
+
+			utxos := make([]string, 0)
+			nodeID := make([]string, 0)
+			amounts := make([]float64, 0)
+
+			// Adding the UTXO hashes for the transaction
+			for i := 0; i < int(inputs); i++ {
+				println("> Enter UTXO hash")
+				utxo, _ := reader.ReadString('\n')
+				utxo = strings.TrimSpace(utxo)
+				utxos = append(utxos, utxo)
+			}
+
+			// Adding the Node ID and Amount for the transaction
+			for i := 0; i < int(outputs); i++ {
+				println("> Enter Node ID")
+				id, _ := reader.ReadString('\n')
+				id = strings.TrimSpace(id)
+				nodeID = append(nodeID, id)
+
+				println("> Enter Amount")
+				amt, _ := reader.ReadString('\n')
+				amt = strings.TrimSpace(amt)
+				amount, _ := strconv.ParseFloat(amt, 64)
+				amounts = append(amounts, amount)
+			}
+
+			err := sendFunds(utxos, nodeID, amounts, fee)
+			if err != nil {
+				fmt.Println("Failed to send funds:", err)
+				continue
 			}
 		}
 
@@ -267,7 +268,7 @@ func main() {
 			continue
 		}
 
-		// Display the Blockchain
+		// Display the Blockchain -> Last 3 Blocks
 		if mode == "3" {
 			displayBlockchain()
 			continue
@@ -296,23 +297,51 @@ func main() {
 			// Create a buffered writer for the stream
 			rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
-			line, _ := rw.ReadString('\n')
-			if line == "" || line == "\n" {
-				continue
-			}
-
-			var blockchain []Block
-
-			err = json.Unmarshal([]byte(line), &blockchain)
-
+			// Send the latest block height
+			_, err = rw.WriteString(Latest_Block + "\n")
 			if err != nil {
-				fmt.Println("Failed to parse JSON:", err)
+				fmt.Println("Failed to send latest block height to peer:", randomPeer.ID, err)
+				stream.Close()
 				continue
 			}
 
-			makeBlockchain(blockchain)
+			height_gap, _ := rw.ReadString('\n')
 
-			continue
+			if height_gap == "Shorter. Try from others\n" {
+				fmt.Println("Peer has a shorter blockchain. Try from others")
+				stream.Close()
+				continue
+			}
+
+			height_gap = strings.TrimSpace(height_gap)
+			height_gap_int, _ := strconv.Atoi(height_gap)
+
+			blocks := make([]Block, height_gap_int)
+
+			// Receive the blockchain from the peer
+			for i := 0; i < height_gap_int; i++ {
+				// Read the block from the peer
+				blockData, _ := rw.ReadString('\n')
+
+				// Save them to the blockchain
+				var block Block
+				err = json.Unmarshal([]byte(blockData), &block)
+				if err != nil {
+					fmt.Println("Failed to parse block data:", err)
+					continue
+				}
+
+				// Add it to the blocks slice
+				blocks = append(blocks, block)
+			}
+
+			// Close the stream
+			stream.Close()
+
+			err = makeBlockchain(blocks)
+			if err != nil {
+				continue
+			}
 		}
 
 		// Global message
@@ -382,12 +411,13 @@ func main() {
 			}
 		}
 
+		// Display the blockchain
 		if mode == "6" {
 			validateBlockchain()
 		}
 
+		// Validate a block of your choice
 		if mode == "7" {
-
 			// Input the Block Hash for Validation
 
 			println("> Enter Block Hash for Validation")
@@ -400,12 +430,8 @@ func main() {
 			validateBlock(Blockchain[blockHash])
 		}
 
-		if mode == "8 " {
-			// Display Mempool
-			displayMempool()
-		}
-
-		if mode == "9" {
+		// Mine the block
+		if mode == "8" {
 			// Display the Mempool for selection of transactions
 
 			displayMempool()
@@ -426,6 +452,7 @@ func main() {
 
 			transactions := make([]string, numInt)
 
+			netFee := 0.0
 			for i := 0; i < numInt; i++ {
 				fmt.Println("Enter Transaction ID")
 				txn, err := reader.ReadString('\n')
@@ -435,11 +462,16 @@ func main() {
 				}
 
 				txn = strings.TrimSpace(txn)
+
+				// Add each fee to the netFee
+				netFee += Mempool[txn].Fee
+
+				// Add the transaction to the slice
 				transactions[i] = txn
 			}
 
 			// Now, create a block with the selected transactions
-			block, err := createBlock(transactions)
+			block, err := createBlock(transactions, netFee)
 			if err != nil {
 				fmt.Println("Failed to create block:", err)
 				continue

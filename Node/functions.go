@@ -13,101 +13,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
-// Sending UTXOs
-func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) error {
-
-	inputs := make([]Input, len(utxo))
-	outputs := make([]Output, len(nodeID))
-
-	for idx, utxoHash := range utxo {
-
-		UTXOMutex.RLock()
-		utxoInput := UTXO_SET[utxoHash]
-		UTXOMutex.RUnlock()
-
-		inputs[idx] = Input{
-			Txn_id: utxoInput.Txn_id,
-			Index:  int32(utxoInput.Value),
-		}
-	}
-
-	for idx, key := range nodeID {
-		outputs[idx] = Output{
-			Pubkey: key,
-			Value:  amount[idx],
-		}
-	}
-
-	transaction := &Transaction{
-		In_sz:     int32(len(inputs)),
-		Out_sz:    int32(len(outputs)),
-		Fee:       fee,
-		Inputs:    inputs,
-		Outputs:   outputs,
-		Timestamp: time.Now(),
-	}
-
-	transaction.generateTxn()
-
-	peerMutex.RLock()
-	peers := peerArray
-	peerMutex.RUnlock()
-
-	success := false
-
-	for _, peer := range peers {
-		stream, err := User.NewStream(
-			context.Background(),
-			peer.ID,
-			protocol.ID(config.ProtocolID+"/broadcast/transaction"),
-		)
-
-		if err != nil {
-			fmt.Println("Failed to create a stream:", err)
-			continue
-		}
-
-		rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
-		data, err := json.Marshal(transaction)
-		if err != nil {
-			fmt.Println("Failed to serialize message:", err)
-			stream.Close()
-			continue
-		}
-
-		_, err = rw.WriteString(string(data) + "\n")
-		if err != nil {
-			fmt.Println("Failed to send message to peer:", peer.ID, err)
-			stream.Close()
-			continue
-		}
-
-		// Flush the buffer to ensure data is sent
-		err = rw.Flush()
-		if err != nil {
-			fmt.Println("Failed to flush data to peer:", peer.ID, err)
-			stream.Close()
-			continue
-		}
-		stream.Close()
-		success = true
-	}
-
-	if !success {
-		return fmt.Errorf("failed to communicate with any peers")
-	}
-
-	// Add the transaction to the mempool
-	MempoolMutex.Lock()
-	if _, exists := Mempool[transaction.Txn_id]; !exists {
-		Mempool[transaction.Txn_id] = *transaction
-	}
-	MempoolMutex.Unlock()
-
-	return nil
-}
-
 // Creation of a merkle tree and storage
 func buildMerkle(txnList []Transaction) string {
 	if len(txnList) == 0 {
@@ -164,6 +69,122 @@ func merkleFunc(txnList []Transaction, treeIdx int, level int, depth int) *Merkl
 	return node
 }
 
+// Sending UTXOs
+func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) error {
+
+	inputs := make([]Input, len(utxo))
+	outputs := make([]Output, len(nodeID))
+
+	// Create inputs of the transaction
+	inputSum := 0.0
+	for idx, utxoHash := range utxo {
+
+		UTXOMutex.RLock()
+		utxoInput := UTXO_SET[utxoHash]
+		UTXOMutex.RUnlock()
+
+		inputs[idx] = Input{
+			Txn_id: utxoInput.Txn_id,
+			Index:  int32(utxoInput.Value),
+		}
+		inputSum += utxoInput.Value
+	}
+
+	// Create outputs of the transaction
+	outputSum := 0.0
+	for idx, key := range nodeID {
+		outputs[idx] = Output{
+			Pubkey: key,
+			Value:  amount[idx],
+		}
+		outputSum += amount[idx]
+	}
+
+	if outputSum+fee > inputSum {
+		return fmt.Errorf("output sum and fee is greater than the input")
+	}
+
+	// Remaining credits
+	if inputSum-outputSum-fee > 0 {
+		outputs = append(outputs, Output{
+			Pubkey: User.ID().String(),
+			Value:  inputSum - outputSum - fee,
+		})
+	}
+
+	// Create the transaction
+	transaction := &Transaction{
+		In_sz:     int32(len(inputs)),
+		Out_sz:    int32(len(outputs)),
+		Fee:       fee,
+		Inputs:    inputs,
+		Outputs:   outputs,
+		Timestamp: time.Now(),
+	}
+
+	transaction.generateTxn()
+
+	// Obtain the peers available
+	peerMutex.RLock()
+	peers := peerArray
+	peerMutex.RUnlock()
+
+	success := false
+
+	// Broadcast the transactions to the peers
+	for _, peer := range peers {
+		stream, err := User.NewStream(
+			context.Background(),
+			peer.ID,
+			protocol.ID(config.ProtocolID+"/broadcast/transaction"),
+		)
+
+		if err != nil {
+			fmt.Println("Failed to create a stream:", err)
+			continue
+		}
+
+		rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+
+		data, err := json.Marshal(transaction)
+		if err != nil {
+			fmt.Println("Failed to serialize message:", err)
+			stream.Close()
+			continue
+		}
+
+		_, err = rw.WriteString(string(data) + "\n")
+		if err != nil {
+			fmt.Println("Failed to send message to peer:", peer.ID, err)
+			stream.Close()
+			continue
+		}
+
+		// Flush the buffer to ensure data is sent
+		err = rw.Flush()
+		if err != nil {
+			fmt.Println("Failed to flush data to peer:", peer.ID, err)
+			stream.Close()
+			continue
+		}
+		stream.Close()
+		success = true
+	}
+
+	if !success {
+		return fmt.Errorf("failed to communicate with any peers")
+	}
+
+	// Add the transaction to the mempool
+	MempoolMutex.Lock()
+	if _, exists := Mempool[transaction.Txn_id]; !exists {
+		Mempool[transaction.Txn_id] = *transaction
+	}
+	MempoolMutex.Unlock()
+
+	return nil
+}
+
 // Remove the confirmed transactions from the mempool
 func removeFromMempool(block Block) {
 	if len(block.Transactions) == 0 {
@@ -171,8 +192,15 @@ func removeFromMempool(block Block) {
 	}
 
 	for _, txn := range block.Transactions {
+		// Add the transaction to Transaction database
+		TransMutex.Lock()
+		Transactions[txn.Txn_id] = txn
+		TransMutex.Unlock()
+
+		// Handle the UTXOs, creating and destorying the UTXOs
 		handleUTXO(txn)
 
+		// Remove the transaction from the mempool
 		MempoolMutex.Lock()
 		delete(Mempool, txn.Txn_id)
 		MempoolMutex.Unlock()
@@ -181,8 +209,9 @@ func removeFromMempool(block Block) {
 
 // Add and Remove UTXOs
 func handleUTXO(txn Transaction) {
+
+	// Deestory the UTXOs
 	for _, input := range txn.Inputs {
-		// Remove the UTXO from the UTXO set
 		utxoHashInput := sha256.Sum256([]byte(fmt.Sprintf("%s:%d", input.Txn_id, input.Index)))
 
 		UTXOMutex.Lock()
@@ -190,6 +219,7 @@ func handleUTXO(txn Transaction) {
 		UTXOMutex.Unlock()
 	}
 
+	// Create the UTXOS
 	for idx, output := range txn.Outputs {
 		// Add the new UTXO into the UTXO set
 		utxoHashOutput := sha256.Sum256([]byte(fmt.Sprintf("%s:%d", txn.Txn_id, idx)))
@@ -225,29 +255,56 @@ func displayBlockchain() {
 	BlockMutex.RUnlock()
 }
 
-func makeBlockchain(blockchain []Block) {
+func makeBlockchain(blockchain []Block) error {
+
+	// Populate the blockchain database
 	BlockMutex.Lock()
 	for _, block := range blockchain {
 		Blockchain[block.Block_hash] = block
 
-		// Create the UTXOs
+		// Handle the UTXOs, creating and destorying the UTXOs
 		for _, txn := range block.Transactions {
 			handleUTXO(txn)
 		}
 
-		buildMerkle(block.Transactions)
+		// No need to assign the result as the merkle root is already sent from the target node
+		_ = buildMerkle(block.Transactions)
 	}
 	BlockMutex.Unlock()
+
+	// Set the genesis block
+	Genesis_Block = blockchain[0].Block_hash
+
+	// Set the latest block
+	Latest_Block = blockchain[len(blockchain)-1].Block_hash
+	return nil
 }
 
-func createBlock(transaction []string) (Block, error) {
+func createBlock(transaction []string, coinbaseFee float64) (Block, error) {
 	current_block := Blockchain[Latest_Block]
 
 	transactions := make([]Transaction, len(transaction)+1)
 
+	transactions[0] = Transaction{
+		In_sz:  0,
+		Out_sz: 1,
+		Fee:    coinbaseFee,
+		Inputs: []Input{},
+		Outputs: []Output{
+			{
+				Pubkey: User.ID().String(),
+				Value:  coinbaseFee,
+			},
+		},
+		Timestamp: time.Now(),
+	}
+
+	// Generate the transaction fee for the miner
+	transactions[0].generateTxn()
+
 	for idx, txn := range transaction {
 		MempoolMutex.RLock()
-		transactions[idx] = Mempool[txn]
+		transactions[idx+1] = Mempool[txn]
 		MempoolMutex.RUnlock()
 	}
 
@@ -261,6 +318,11 @@ func createBlock(transaction []string) (Block, error) {
 
 	// Generate the block hash
 	newBlock.generateBlockHash()
+
+	// Add the block hash to all the transactions
+	for idx := range transactions {
+		transactions[idx].Block_hash = newBlock.Block_hash
+	}
 
 	// Create the merkle root
 	newBlock.Merkle_hash = buildMerkle(newBlock.Transactions)
