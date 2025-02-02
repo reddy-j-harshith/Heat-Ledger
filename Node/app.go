@@ -294,7 +294,7 @@ func main() {
 			// Create a buffered writer for the stream
 			rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
-			line, err := rw.ReadString('\n')
+			line, _ := rw.ReadString('\n')
 			if line == "" || line == "\n" {
 				continue
 			}

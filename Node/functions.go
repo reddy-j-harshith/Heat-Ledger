@@ -236,7 +236,18 @@ func makeBlockchain(blockchain []Block) {
 }
 
 func displayBlockchain() {
-
+	block := Latest_Block
+	BlockMutex.RLock()
+	i := 0
+	for block != Genesis_Block {
+		if i == 3 {
+			break
+		}
+		fmt.Println(Blockchain[block])
+		block = Blockchain[block].Previous_hash
+		i++
+	}
+	BlockMutex.RUnlock()
 }
 
 // Mining of a block
