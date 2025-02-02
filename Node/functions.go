@@ -272,8 +272,10 @@ func makeBlockchain(blockchain []Block) error {
 	}
 	BlockMutex.Unlock()
 
-	// Set the genesis block
-	Genesis_Block = blockchain[0].Block_hash
+	// Set the genesis block if applicable
+	if blockchain[len(blockchain)-1].Block_height == 0 {
+		Genesis_Block = blockchain[0].Block_hash
+	}
 
 	// Set the latest block
 	Latest_Block = blockchain[len(blockchain)-1].Block_hash
