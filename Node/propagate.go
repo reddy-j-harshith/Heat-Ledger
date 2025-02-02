@@ -197,8 +197,8 @@ func propagateBlock(rw *bufio.ReadWriter, strm network.Stream) {
 			continue
 		}
 
-		var block Block
-		err = json.Unmarshal([]byte(line), &block)
+		var blockDTO BlockDTO
+		err = json.Unmarshal([]byte(line), &blockDTO)
 		if err != nil {
 			fmt.Println("Failed to parse JSON:", err)
 			continue
@@ -206,17 +206,37 @@ func propagateBlock(rw *bufio.ReadWriter, strm network.Stream) {
 
 		// Add the block to the blockchain database
 		BlockMutex.RLock()
-		_, exists := Blockchain[block.Block_hash]
+		_, exists := Blockchain[blockDTO.Block_hash]
 		BlockMutex.RUnlock()
 
 		if !exists {
-			err := validateBlock(block) // Block validation
+			// Make the Block
+			block := Block{
+				Block_hash:    blockDTO.Block_hash,
+				Block_height:  blockDTO.Block_height,
+				Previous_hash: blockDTO.Previous_hash,
+				Nonce:         blockDTO.Nonce,
+				Difficulty:    blockDTO.Difficulty,
+				Merkle_hash:   blockDTO.Merkle_hash,
+				Timestamp:     blockDTO.Timestamp,
+				Transactions:  []Transaction{},
+			}
+
+			// Add Transactions to the Block
+			for _, txn := range blockDTO.Transactions {
+				transaction := Mempool[txn]
+				block.Transactions = append(block.Transactions, transaction)
+			}
+
+			// Validate the Block
+			err := validateBlock(block)
 			if err != nil {
 				fmt.Println("Block Validation Failed: Stopping propagation", err)
 				return
 			}
 
-			removeTxns(block) // Remove Transactions from Mempool & Update UTXO
+			// Remove Transactions from Mempool & Update UTXO
+			go removeFromMempool(block)
 			go buildMerkle(block.Transactions)
 			Latest_Block = block.Block_hash
 
@@ -228,7 +248,7 @@ func propagateBlock(rw *bufio.ReadWriter, strm network.Stream) {
 			continue
 		}
 
-		fmt.Printf("\x1b[32m> New Block Added to Blockchain\n> Block_hash: %s\n> Sent from %s\x1b[0m\n", block.Block_hash, strm.Conn().RemotePeer())
+		fmt.Printf("\x1b[32m> New Block Added to Blockchain\n> Block_hash: %s\n> Sent from %s\x1b[0m\n", blockDTO.Block_hash, strm.Conn().RemotePeer())
 
 		peerMutex.RLock()
 		peers := peerArray
@@ -239,14 +259,14 @@ func propagateBlock(rw *bufio.ReadWriter, strm network.Stream) {
 				continue
 			}
 
-			stream, err := User.NewStream(context.Background(), peer.ID, protocol.ID("/blockchain/1.0.0/broadcast/block"))
+			stream, err := User.NewStream(context.Background(), peer.ID, protocol.ID(config.ProtocolID+"/broadcast/block"))
 			if err != nil {
 				continue
 			}
 
 			rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
-			data, err := json.Marshal(block)
+			data, err := json.Marshal(blockDTO)
 			if err != nil {
 				fmt.Println("Failed to serialize transaction:", err)
 				stream.Close()

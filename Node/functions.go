@@ -165,7 +165,7 @@ func merkleFunc(txnList []Transaction, treeIdx int, level int, depth int) *Merkl
 }
 
 // Remove the confirmed transactions from the mempool
-func removeTxns(block Block) {
+func removeFromMempool(block Block) {
 	if len(block.Transactions) == 0 {
 		return
 	}
@@ -199,6 +199,8 @@ func handleUTXO(txn Transaction) {
 		UTXOMutex.Unlock()
 	}
 }
+
+// Display mempool
 func displayMempool() {
 	MempoolMutex.RLock()
 	fmt.Println("Mempool:")
@@ -238,6 +240,34 @@ func makeBlockchain(blockchain []Block) {
 	BlockMutex.Unlock()
 }
 
+func createBlock(transaction []string) (Block, error) {
+	current_block := Blockchain[Latest_Block]
+
+	transactions := make([]Transaction, len(transaction))
+
+	for idx, txn := range transaction {
+		MempoolMutex.RLock()
+		transactions[idx] = Mempool[txn]
+		MempoolMutex.RUnlock()
+	}
+
+	// Create a new block
+	newBlock := Block{
+		Block_height:  current_block.Block_height + 1,
+		Previous_hash: current_block.Block_hash,
+		Transactions:  transactions,
+		Timestamp:     time.Now(),
+	}
+
+	// Generate the block hash
+	newBlock.generateBlockHash()
+
+	// Create the merkle root
+	newBlock.Merkle_hash = buildMerkle(newBlock.Transactions)
+
+	return newBlock, nil
+}
+
 // TODO
 func startUp() {
 
@@ -251,12 +281,55 @@ func startUp() {
 }
 
 // Mining of a block
-func mineBlock() {
+func mineBlock(block Block) error {
 
+	// Check if the block is valid
+	err := validateBlock(block)
+	if err != nil {
+		return fmt.Errorf("block is invalid")
+	}
+
+	return nil
 }
 
 // Validate whether the recieved blockchain copy has some inconsistencies
 func validateBlockchain() {
+
+}
+
+func validateTransaction(txn Transaction) error {
+
+	// Check the availablity in the UTXO Set
+	inputSum := 0.0
+	for _, input := range txn.Inputs {
+		utxoHash := sha256.Sum256([]byte(fmt.Sprintf("%s:%d", input.Txn_id, input.Index)))
+
+		UTXOMutex.RLock()
+		utxo, exists := UTXO_SET[hex.EncodeToString(utxoHash[:])]
+		UTXOMutex.RUnlock()
+
+		if !exists {
+			return fmt.Errorf("input does not exist in the UTXO set")
+		}
+
+		inputSum += utxo.Value
+	}
+
+	// Check the negative sums
+	outputSum := 0.0
+	for _, output := range txn.Outputs {
+		if output.Value < 0 {
+			return fmt.Errorf("output value is negative")
+		}
+		outputSum += output.Value
+	}
+
+	// Validate the fee
+	if outputSum+txn.Fee > inputSum {
+		return fmt.Errorf("output sum and fee is greater than the input")
+	}
+
+	return nil
 
 }
 
@@ -273,7 +346,13 @@ func validateBlock(block Block) error {
 		return fmt.Errorf("previous hash does not match")
 	}
 
-	// TODO: Validate the transactions
+	// Validate the transactions
+	for _, txn := range block.Transactions {
+		err := validateTransaction(txn)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

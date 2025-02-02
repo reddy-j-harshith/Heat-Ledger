@@ -53,6 +53,17 @@ type Block struct {
 	Transactions  []Transaction `json:"transactions"`
 }
 
+type BlockDTO struct {
+	Block_hash    string    `json:"block_hash"`
+	Block_height  int32     `json:"block_height"`
+	Previous_hash string    `json:"previous_hash"`
+	Nonce         int32     `json:"nonce"`
+	Difficulty    int32     `json:"difficulty"`
+	Merkle_hash   string    `json:"merkle_hash"`
+	Timestamp     time.Time `json:"timestamp"`
+	Transactions  []string  `json:"transactions"`
+}
+
 type MerkleNode struct {
 	// Concatenations of the left and right nodes
 	Value string
@@ -80,4 +91,13 @@ func (txn *Transaction) generateTxn() {
 	hash := sha256.Sum256([]byte(data))
 
 	txn.Txn_id = fmt.Sprintf("%x", hash)
+}
+
+func (block *Block) generateBlockHash() {
+	var data string
+	for _, txn := range block.Transactions {
+		data += txn.Txn_id
+	}
+	hash := sha256.Sum256([]byte(data))
+	block.Block_hash = fmt.Sprintf("%x", hash)
 }
