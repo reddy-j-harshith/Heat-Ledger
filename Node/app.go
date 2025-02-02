@@ -260,8 +260,13 @@ func main() {
 			}
 		}
 
-		// Handle Gossip Mode
+		// Dispay all the transactions in the Mempool
 		if mode == "2" {
+			displayMempool()
+		}
+
+		// Handle Gossip Mode
+		if mode == "3" {
 			// Taking the input to send a message in gossip mode
 			println("> Enter Message for Gossip (type 'Cancel' to go back to mode selection)")
 

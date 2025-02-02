@@ -212,6 +212,15 @@ func startUp() {
 
 }
 
+func displayMempool() {
+	MempoolMutex.RLock()
+	fmt.Println("Mempool:")
+	for _, txn := range Mempool {
+		fmt.Println(txn)
+	}
+	MempoolMutex.RUnlock()
+}
+
 // Mining of a block
 func mineBlock() {
 
