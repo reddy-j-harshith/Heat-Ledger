@@ -24,12 +24,13 @@ var (
 	database map[string]map[int32]string = map[string]map[int32]string{}
 
 	// Blockchain database
-	Latest_Block string                 = ""
-	Mempool      map[string]Transaction = map[string]Transaction{}
-	UTXO_SET     map[string]UTXO        = map[string]UTXO{}
-	Blockchain   map[string]Block       = map[string]Block{}
-	Merkle_Roots map[string]*MerkleNode = map[string]*MerkleNode{}
-	Transactions map[string]Transaction = map[string]Transaction{}
+	Genesis_Block string                 = ""
+	Latest_Block  string                 = ""
+	Mempool       map[string]Transaction = map[string]Transaction{}
+	UTXO_SET      map[string]UTXO        = map[string]UTXO{}
+	Blockchain    map[string]Block       = map[string]Block{}
+	Merkle_Roots  map[string]*MerkleNode = map[string]*MerkleNode{}
+	Transactions  map[string]Transaction = map[string]Transaction{}
 
 	// Mutex for the respective Databases
 	MempoolMutex sync.RWMutex // Mutex for the mempool

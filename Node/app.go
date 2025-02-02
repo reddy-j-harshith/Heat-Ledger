@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 
@@ -260,13 +261,58 @@ func main() {
 			}
 		}
 
-		// Dispay all the transactions in the Mempool
+		// Dislpay all the transactions in the Mempool
 		if mode == "2" {
 			displayMempool()
 		}
 
-		// Handle Gossip Mode
+		// Display the Blockchain
 		if mode == "3" {
+			displayBlockchain()
+		}
+
+		// Sync the Blockchain
+		if mode == "4" {
+			// Pick a random peer to sync the blockchain
+			peerMutex.RLock()
+			peers := peerArray
+			if len(peers) == 0 {
+				fmt.Println("No peers available for syncing")
+				continue
+			}
+			randomPeer := peers[rand.Intn(len(peers))]
+			fmt.Println("Syncing with peer:", randomPeer.ID.String())
+			// Add your blockchain syncing logic here
+			peerMutex.RUnlock()
+
+			stream, err := User.NewStream(ctx, randomPeer.ID, protocol.ID(config.ProtocolID+"/download/blockchain"))
+			if err != nil {
+				fmt.Println("Failed to create stream with peer:", randomPeer.ID)
+				continue
+			}
+
+			// Create a buffered writer for the stream
+			rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+
+			line, err := rw.ReadString('\n')
+			if line == "" || line == "\n" {
+				continue
+			}
+
+			var blockchain []Block
+
+			err = json.Unmarshal([]byte(line), &blockchain)
+
+			if err != nil {
+				fmt.Println("Failed to parse JSON:", err)
+				continue
+			}
+
+			makeBlockchain(blockchain)
+		}
+
+		// Handle Gossip Mode
+		if mode == "5" {
 			// Taking the input to send a message in gossip mode
 			println("> Enter Message for Gossip (type 'Cancel' to go back to mode selection)")
 

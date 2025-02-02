@@ -199,6 +199,14 @@ func handleUTXO(txn Transaction) {
 		UTXOMutex.Unlock()
 	}
 }
+func displayMempool() {
+	MempoolMutex.RLock()
+	fmt.Println("Mempool:")
+	for _, txn := range Mempool {
+		fmt.Println(txn)
+	}
+	MempoolMutex.RUnlock()
+}
 
 // TODO
 func startUp() {
@@ -212,13 +220,23 @@ func startUp() {
 
 }
 
-func displayMempool() {
-	MempoolMutex.RLock()
-	fmt.Println("Mempool:")
-	for _, txn := range Mempool {
-		fmt.Println(txn)
+func makeBlockchain(blockchain []Block) {
+	BlockMutex.Lock()
+	for _, block := range blockchain {
+		Blockchain[block.Block_hash] = block
+
+		// Create the UTXOs
+		for _, txn := range block.Transactions {
+			handleUTXO(txn)
+		}
+
 	}
-	MempoolMutex.RUnlock()
+	BlockMutex.Unlock()
+
+}
+
+func displayBlockchain() {
+
 }
 
 // Mining of a block
