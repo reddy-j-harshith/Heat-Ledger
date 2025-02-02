@@ -385,5 +385,56 @@ func main() {
 		if mode == "6" {
 			validateBlockchain()
 		}
+
+		if mode == "7" {
+
+			// Input the Block Hash for Validation
+
+			println("> Enter Block Hash for Validation")
+			blockHash, err := reader.ReadString('\n')
+			if err != nil {
+				fmt.Println("Error reading from stdin:", err)
+				continue
+			}
+
+			validateBlock(Blockchain[blockHash])
+		}
+
+		if mode == "8 " {
+			// Display Mempool
+			displayMempool()
+		}
+
+		if mode == "9" {
+			// Display the Mempool for selection of transactions
+
+			displayMempool()
+
+			fmt.Println("Enter number of transactions")
+			num, err := reader.ReadString('\n')
+			if err != nil {
+				fmt.Println("Error reading from stdin:", err)
+				continue
+			}
+
+			num = strings.TrimSpace(num)
+			numInt, _ := strconv.Atoi(num)
+
+			transactions := make([]string, 0)
+
+			for i := 0; i < numInt; i++ {
+				fmt.Println("Enter Transaction ID")
+				txn, err := reader.ReadString('\n')
+				if err != nil {
+					fmt.Println("Error reading from stdin:", err)
+					continue
+				}
+
+				txn = strings.TrimSpace(txn)
+				transactions = append(transactions, txn)
+			}
+
+			// TODO: Now, create a block with the selected transactions
+		}
 	}
 }
