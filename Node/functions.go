@@ -265,6 +265,9 @@ func makeBlockchain(blockchain []Block) error {
 		// Handle the UTXOs, creating and destorying the UTXOs
 		for _, txn := range block.Transactions {
 			handleUTXO(txn)
+			TransMutex.Lock()
+			Transactions[txn.Txn_id] = txn
+			TransMutex.Unlock()
 		}
 
 		// No need to assign the result as the merkle root is already sent from the target node
@@ -332,35 +335,7 @@ func createBlock(transaction []string, coinbaseFee float64) (Block, error) {
 	return newBlock, nil
 }
 
-// TODO
-func startUp() {
-
-	// Create the genesis block
-	// Download the UTXO set
-	// Download the blockchain
-	// Download the mempool
-	// Download the transactions
-	// Create the merkle roots
-
-}
-
-// Mining of a block
-func mineBlock(block Block) error {
-
-	// Check if the block is valid
-	err := validateBlock(block)
-	if err != nil {
-		return fmt.Errorf("block is invalid")
-	}
-
-	return nil
-}
-
-// Validate whether the recieved blockchain copy has some inconsistencies
-func validateBlockchain() {
-
-}
-
+// Validate the transaction by checking the UTXO set
 func validateTransaction(txn Transaction) error {
 
 	// Check the availablity in the UTXO Set
@@ -394,7 +369,6 @@ func validateTransaction(txn Transaction) error {
 	}
 
 	return nil
-
 }
 
 // Validation of a block by checking the previous hash, and all the transactions
@@ -419,4 +393,30 @@ func validateBlock(block Block) error {
 	}
 
 	return nil
+}
+
+// TODO
+func startUp() {
+
+	// Create the genesis block
+	// Download the blockchain -> UTXO Set, Block Set and the TRansactions Set included, making the merkle roots as well
+	// Download the mempool
+
+}
+
+// Mining of a block
+func mineBlock(block Block) error {
+
+	// Check if the block is valid
+	err := validateBlock(block)
+	if err != nil {
+		return fmt.Errorf("block is invalid")
+	}
+
+	return nil
+}
+
+// Validate whether the recieved blockchain copy has some inconsistencies
+func validateBlockchain() {
+
 }
