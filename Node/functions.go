@@ -208,33 +208,6 @@ func displayMempool() {
 	MempoolMutex.RUnlock()
 }
 
-// TODO
-func startUp() {
-
-	// Create the genesis block
-	// Download the UTXO set
-	// Download the blockchain
-	// Download the mempool
-	// Download the transactions
-	// Create the merkle roots
-
-}
-
-func makeBlockchain(blockchain []Block) {
-	BlockMutex.Lock()
-	for _, block := range blockchain {
-		Blockchain[block.Block_hash] = block
-
-		// Create the UTXOs
-		for _, txn := range block.Transactions {
-			handleUTXO(txn)
-		}
-
-	}
-	BlockMutex.Unlock()
-
-}
-
 func displayBlockchain() {
 	block := Latest_Block
 	BlockMutex.RLock()
@@ -248,6 +221,33 @@ func displayBlockchain() {
 		i++
 	}
 	BlockMutex.RUnlock()
+}
+
+func makeBlockchain(blockchain []Block) {
+	BlockMutex.Lock()
+	for _, block := range blockchain {
+		Blockchain[block.Block_hash] = block
+
+		// Create the UTXOs
+		for _, txn := range block.Transactions {
+			handleUTXO(txn)
+		}
+
+		buildMerkle(block.Transactions)
+	}
+	BlockMutex.Unlock()
+}
+
+// TODO
+func startUp() {
+
+	// Create the genesis block
+	// Download the UTXO set
+	// Download the blockchain
+	// Download the mempool
+	// Download the transactions
+	// Create the merkle roots
+
 }
 
 // Mining of a block

@@ -264,11 +264,13 @@ func main() {
 		// Dislpay all the transactions in the Mempool
 		if mode == "2" {
 			displayMempool()
+			continue
 		}
 
 		// Display the Blockchain
 		if mode == "3" {
 			displayBlockchain()
+			continue
 		}
 
 		// Sync the Blockchain
@@ -309,9 +311,11 @@ func main() {
 			}
 
 			makeBlockchain(blockchain)
+
+			continue
 		}
 
-		// Handle Gossip Mode
+		// Global message
 		if mode == "5" {
 			// Taking the input to send a message in gossip mode
 			println("> Enter Message for Gossip (type 'Cancel' to go back to mode selection)")
@@ -376,6 +380,10 @@ func main() {
 
 				stream.Close()
 			}
+		}
+
+		if mode == "6" {
+			validateBlockchain()
 		}
 	}
 }
