@@ -424,7 +424,7 @@ func main() {
 			num = strings.TrimSpace(num)
 			numInt, _ := strconv.Atoi(num)
 
-			transactions := make([]string, 0)
+			transactions := make([]string, numInt)
 
 			for i := 0; i < numInt; i++ {
 				fmt.Println("Enter Transaction ID")
@@ -435,7 +435,7 @@ func main() {
 				}
 
 				txn = strings.TrimSpace(txn)
-				transactions = append(transactions, txn)
+				transactions[i] = txn
 			}
 
 			// Now, create a block with the selected transactions
@@ -444,8 +444,6 @@ func main() {
 				fmt.Println("Failed to create block:", err)
 				continue
 			}
-
-			// TODO: Create a coin base the coinbase transaction
 
 			// Mine the block
 			mineBlock(block)

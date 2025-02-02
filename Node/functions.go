@@ -243,7 +243,7 @@ func makeBlockchain(blockchain []Block) {
 func createBlock(transaction []string) (Block, error) {
 	current_block := Blockchain[Latest_Block]
 
-	transactions := make([]Transaction, len(transaction))
+	transactions := make([]Transaction, len(transaction)+1)
 
 	for idx, txn := range transaction {
 		MempoolMutex.RLock()
