@@ -69,7 +69,7 @@ func merkleFunc(txnList []Transaction, treeIdx int, level int, depth int) *Merkl
 	return node
 }
 
-// Sending UTXOs
+// Sending UTXOs - Create the transaction and add it to the mempool
 func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) error {
 
 	inputs := make([]Input, len(utxo))
@@ -104,7 +104,7 @@ func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) er
 		return fmt.Errorf("output sum and fee is greater than the input")
 	}
 
-	// Remaining credits
+	// Create another output for the change
 	if inputSum-outputSum-fee > 0 {
 		outputs = append(outputs, Output{
 			Pubkey: User.ID().String(),
@@ -185,7 +185,7 @@ func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) er
 	return nil
 }
 
-// Remove the confirmed transactions from the mempool
+// Remove the confirmed transactions from the mempool - typically called after mining a block
 func removeFromMempool(block Block) {
 	if len(block.Transactions) == 0 {
 		return
@@ -230,7 +230,7 @@ func handleUTXO(txn Transaction) {
 	}
 }
 
-// Display mempool
+// Display Mempool
 func displayMempool() {
 	MempoolMutex.RLock()
 	fmt.Println("Mempool:")
@@ -240,6 +240,7 @@ func displayMempool() {
 	MempoolMutex.RUnlock()
 }
 
+// Display the blockchain upto three blocks
 func displayBlockchain() {
 	block := Latest_Block
 	BlockMutex.RLock()
@@ -255,14 +256,18 @@ func displayBlockchain() {
 	BlockMutex.RUnlock()
 }
 
+// Add the new blocks to the existing blockchain
 func makeBlockchain(blockchain []Block) error {
+
+	// Note: We assume that the []Block is sorted in the order of the blockchain
+	// Last one is the earliest block
 
 	// Populate the blockchain database
 	BlockMutex.Lock()
 	for _, block := range blockchain {
 		Blockchain[block.Block_hash] = block
 
-		// Handle the UTXOs, creating and destorying the UTXOs
+		// Handle the UTXOs, creating and destorying the UTXOs for the new blocks
 		for _, txn := range block.Transactions {
 			handleUTXO(txn)
 			TransMutex.Lock()
