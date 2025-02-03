@@ -95,9 +95,14 @@ func (txn *Transaction) generateTxn() {
 
 func (block *Block) generateBlockHash() {
 	var data string
-	for _, txn := range block.Transactions {
-		data += txn.Txn_id
-	}
+
+	data += block.Previous_hash
+	data += block.Merkle_hash
+	data += strconv.Itoa(int(block.Nonce))
+	data += block.Timestamp.String()
+	data += strconv.Itoa(int(block.Block_height))
+	data += strconv.Itoa(int(block.Difficulty))
+
 	hash := sha256.Sum256([]byte(data))
 	block.Block_hash = fmt.Sprintf("%x", hash)
 }
