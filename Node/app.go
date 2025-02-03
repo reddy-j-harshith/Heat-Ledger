@@ -162,7 +162,15 @@ func main() {
 
 	for {
 		// Mode Selection: Direct Message or Gossip Mode
-		print("> Select Mode (1: Send Transaction, 2: Gossip Mode, 9: Exit)\n> ")
+		fmt.Println("> Select Mode (1: Send Transaction\n" +
+			"2: Display Mempool\n" +
+			"3: Display Blockchain\n" +
+			"4: Sync Blockchain\n" +
+			"5: Global Message\n" +
+			"6: Validate Blockchain\n" +
+			"7: Validate Block\n" +
+			"8: Mine Block\n" +
+			"9: Exit)\n> ")
 		mode, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Println("Error reading the input")
