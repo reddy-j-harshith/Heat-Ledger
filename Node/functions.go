@@ -421,6 +421,15 @@ func mineBlock(block Block) error {
 		nonce++
 	}
 
+	// Check if the current block height is the same as the latest block height
+	BlockMutex.RLock()
+	currentBlock := Blockchain[Latest_Block]
+	BlockMutex.RUnlock()
+
+	if currentBlock.Block_height != block.Block_height-1 {
+		return fmt.Errorf("block at the height is already mined!! Please try again")
+	}
+
 	// Add the block to the blockchain
 	BlockMutex.Lock()
 	Blockchain[block.Block_hash] = block
