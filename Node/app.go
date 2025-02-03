@@ -255,11 +255,13 @@ func main() {
 				amounts = append(amounts, amount)
 			}
 
-			err := sendFunds(utxos, nodeID, amounts, fee)
+			txn_id, err := sendFunds(utxos, nodeID, amounts, fee)
 			if err != nil {
 				fmt.Println("Failed to send funds:", err)
 				continue
 			}
+
+			fmt.Println("Transaction created with ID:", txn_id)
 		}
 
 		// Dislpay all the transactions in the Mempool
