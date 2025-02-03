@@ -399,15 +399,6 @@ func validateBlock(block Block) error {
 	return nil
 }
 
-// TODO
-func startUp() {
-
-	// Create the genesis block
-	// Download the blockchain -> UTXO Set, Block Set and the TRansactions Set included, making the merkle roots as well
-	// Download the mempool
-
-}
-
 // Mining of a block
 func mineBlock(block Block) error {
 
@@ -500,6 +491,15 @@ func mineBlock(block Block) error {
 	}
 
 	return nil
+}
+
+// TODO
+func startUp() {
+
+	// Create the genesis block
+	// Download the blockchain -> UTXO Set, Block Set and the TRansactions Set included, making the merkle roots as well
+	// Download the mempool
+
 }
 
 // Validate whether the recieved blockchain copy has some inconsistencies
