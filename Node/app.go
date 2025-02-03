@@ -480,7 +480,7 @@ func main() {
 			}
 
 			// Mine the block
-			go mineBlock(block)
+			startMining(block)
 			logger.Info("Mining the block")
 		}
 	}

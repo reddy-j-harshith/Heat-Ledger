@@ -235,6 +235,11 @@ func propagateBlock(rw *bufio.ReadWriter, strm network.Stream) {
 				return
 			}
 
+			// Stop mining since a new block is confirmed
+			if miningCancel != nil {
+				miningCancel()
+			}
+
 			// Remove Transactions from Mempool & Update UTXO
 			go removeFromMempool(block)
 			go buildMerkle(block.Transactions)

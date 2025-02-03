@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"sync"
 
 	dht "github.com/libp2p/go-libp2p-kad-dht"
@@ -38,4 +39,7 @@ var (
 	BlockMutex   sync.RWMutex // Mutex for the blockchain
 	MerkleMutex  sync.RWMutex // Mutex for the Merkle roots
 	TransMutex   sync.RWMutex // Mutex for the transactions
+
+	miningCtx    context.Context
+	miningCancel context.CancelFunc
 )

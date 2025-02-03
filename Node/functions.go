@@ -399,8 +399,17 @@ func validateBlock(block Block) error {
 	return nil
 }
 
+func startMining(block Block) {
+	if miningCancel != nil {
+		miningCancel() // Stop previous mining
+	}
+
+	miningCtx, miningCancel = context.WithCancel(context.Background())
+	go mineBlock(miningCtx, block)
+}
+
 // Mining of a block
-func mineBlock(block Block) error {
+func mineBlock(ctx context.Context, block Block) error {
 
 	// Check if the block is valid
 	err := validateBlock(block)
@@ -410,15 +419,26 @@ func mineBlock(block Block) error {
 
 	// Mine the block using generateBlockHash
 	nonce := int32(0)
+	foundValidBlock := false
 	for {
-		block.Nonce = nonce
-		block.generateBlockHash()
+		select {
+		case <-ctx.Done():
+			fmt.Println("Mining aborted due to new block arrival")
+			return fmt.Errorf("mining interrupted")
+		default:
+			block.Nonce = nonce
+			block.generateBlockHash()
 
-		// Check if the hash is valid
-		if block.Block_hash[:block.Difficulty] == "0000" {
-			break
+			// Check if the hash is valid
+			if block.Block_hash[:block.Difficulty] == "0000" {
+				foundValidBlock = true
+				break // This ensures the loop exits
+			}
+			nonce++
 		}
-		nonce++
+		if foundValidBlock {
+			break // Break the for loop
+		}
 	}
 
 	// Check if the current block height is the same as the latest block height
