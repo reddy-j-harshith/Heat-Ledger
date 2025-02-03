@@ -56,7 +56,7 @@ func main() {
 	privKeyString = strings.TrimSpace(privKeyString)
 	privKeyBytes, _ := hex.DecodeString(privKeyString)
 
-	privKey, _ := crypto.UnmarshalPrivateKey(privKeyBytes)
+	privKey, _ := crypto.UnmarshalSecp256k1PrivateKey(privKeyBytes)
 
 	// Creating the current node
 	User, err = libp2p.New(
@@ -162,7 +162,7 @@ func main() {
 
 	for {
 		// Mode Selection: Direct Message or Gossip Mode
-		print("> Select Mode (1: Send Transaction, 2: Gossip Mode, 3: Exit)\n> ")
+		print("> Select Mode (1: Send Transaction, 2: Gossip Mode, 9: Exit)\n> ")
 		mode, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Println("Error reading the input")
@@ -172,7 +172,7 @@ func main() {
 		mode = strings.TrimSpace(mode)
 
 		// Exit the program if selected
-		if mode == "3" {
+		if mode == "9" {
 			fmt.Println("Exiting...")
 			break
 		}
