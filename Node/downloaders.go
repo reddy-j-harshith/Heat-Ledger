@@ -22,16 +22,16 @@ func downloadBlockchain(rw *bufio.ReadWriter, strm network.Stream) {
 	// Check if the remote peer has a longer blockchain
 	if len(Blockchain) < int(remote_block.Block_height) {
 		rw.WriteString("Shorter. Try from others\n")
+		rw.Flush()
 		return
 	}
 
 	// Get the block height of the remote peer
 	remote_height := remote_block.Block_height
 
-	BlockMutex.RLock()
-
 	// Send the length of the blockchain
 	_, err := rw.WriteString(strconv.Itoa(len(Blockchain)) + "\n")
+	rw.Flush()
 	if err != nil {
 		fmt.Println("Failed to send blockchain length:", err)
 		return
@@ -50,9 +50,6 @@ func downloadBlockchain(rw *bufio.ReadWriter, strm network.Stream) {
 	}
 
 	fmt.Println("Blockchain sent to", strm.Conn().RemotePeer())
-
-	defer BlockMutex.RUnlock()
-
 }
 
 // Send a block
