@@ -162,7 +162,7 @@ func main() {
 
 	for {
 		// Mode Selection: Direct Message or Gossip Mode
-		fmt.Println("> Select Mode (1: Send Transaction\n" +
+		fmt.Println("> Select Mode (1: Send HeatCoin\n" +
 			"2: Display Mempool\n" +
 			"3: Display Blockchain\n" +
 			"4: Sync Blockchain\n" +
