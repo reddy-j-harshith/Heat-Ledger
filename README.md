@@ -1,6 +1,6 @@
-### Blockchain Application
+# Heat-Ledger
 
-Welcome to the Blockchain Application project! This repository contains the implementation of a blockchain application using the Libp2p library.
+Welcome to the Heat-Ledger! This project is the implementation of a blockchain application using the go-libp2p library.
 
 ## Table of Contents
 
