@@ -14,9 +14,9 @@ import (
 )
 
 // Creation of a merkle tree and storage
-func buildMerkle(txnList []Transaction) string {
+func buildMerkle(txnList []Transaction) *MerkleNode {
 	if len(txnList) == 0 {
-		return ""
+		return &MerkleNode{}
 	}
 
 	// Calculate the depth of the tree
@@ -24,12 +24,7 @@ func buildMerkle(txnList []Transaction) string {
 	// Create the merkle tree
 	MerkleRoot := merkleFunc(txnList, 0, 0, int(merkleDepth))
 
-	// Save the merkle root to the database
-	MerkleMutex.RLock()
-	Merkle_Roots[MerkleRoot.Value] = MerkleRoot
-	MerkleMutex.RUnlock()
-
-	return MerkleRoot.Value
+	return MerkleRoot
 }
 
 func merkleFunc(txnList []Transaction, treeIdx int, level int, depth int) *MerkleNode {
@@ -70,7 +65,7 @@ func merkleFunc(txnList []Transaction, treeIdx int, level int, depth int) *Merkl
 }
 
 // Sending UTXOs - Create the transaction and add it to the mempool
-func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) error {
+func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) (string, error) {
 
 	inputs := make([]Input, len(utxo))
 	outputs := make([]Output, len(nodeID))
@@ -101,7 +96,7 @@ func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) er
 	}
 
 	if outputSum+fee > inputSum {
-		return fmt.Errorf("output sum and fee is greater than the input")
+		return "", fmt.Errorf("output sum and fee is greater than the input")
 	}
 
 	// Create another output for the change
@@ -172,7 +167,7 @@ func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) er
 	}
 
 	if !success {
-		return fmt.Errorf("failed to communicate with any peers")
+		return "", fmt.Errorf("failed to communicate with any peers")
 	}
 
 	// Add the transaction to the mempool
@@ -182,7 +177,7 @@ func sendFunds(utxo []string, nodeID []string, amount []float64, fee float64) er
 	}
 	MempoolMutex.Unlock()
 
-	return nil
+	return transaction.Txn_id, nil
 }
 
 // Remove the confirmed transactions from the mempool - typically called after mining a block
@@ -198,7 +193,7 @@ func removeFromMempool(block Block) {
 		TransMutex.Unlock()
 
 		// Handle the UTXOs, creating and destorying the UTXOs
-		handleUTXO(txn)
+		go handleUTXO(txn)
 
 		// Remove the transaction from the mempool
 		MempoolMutex.Lock()
@@ -210,7 +205,7 @@ func removeFromMempool(block Block) {
 // Add and Remove UTXOs
 func handleUTXO(txn Transaction) {
 
-	// Deestory the UTXOs
+	// Destory the UTXOs
 	for _, input := range txn.Inputs {
 		utxoHashInput := sha256.Sum256([]byte(fmt.Sprintf("%s:%d", input.Txn_id, input.Index)))
 
@@ -263,22 +258,27 @@ func makeBlockchain(blockchain []Block) error {
 	// Last one is the earliest block
 
 	// Populate the blockchain database
-	BlockMutex.Lock()
 	for _, block := range blockchain {
+		BlockMutex.Lock()
 		Blockchain[block.Block_hash] = block
+		BlockMutex.Unlock()
 
 		// Handle the UTXOs, creating and destorying the UTXOs for the new blocks
 		for _, txn := range block.Transactions {
-			handleUTXO(txn)
+			go handleUTXO(txn)
 			TransMutex.Lock()
 			Transactions[txn.Txn_id] = txn
 			TransMutex.Unlock()
 		}
 
 		// No need to assign the result as the merkle root is already sent from the target node
-		_ = buildMerkle(block.Transactions)
+		MerkleRoot := buildMerkle(block.Transactions)
+
+		// Save the merkle root to the database
+		MerkleMutex.RLock()
+		Merkle_Roots[MerkleRoot.Value] = MerkleRoot
+		MerkleMutex.RUnlock()
 	}
-	BlockMutex.Unlock()
 
 	// Set the genesis block if applicable
 	if blockchain[len(blockchain)-1].Block_height == 0 {
@@ -295,6 +295,7 @@ func createBlock(transaction []string, coinbaseFee float64) (Block, error) {
 
 	transactions := make([]Transaction, len(transaction)+1)
 
+	// Make the coinbase transaction
 	transactions[0] = Transaction{
 		In_sz:  0,
 		Out_sz: 1,
@@ -312,6 +313,7 @@ func createBlock(transaction []string, coinbaseFee float64) (Block, error) {
 	// Generate the transaction fee for the miner
 	transactions[0].generateTxn()
 
+	// The include the rest of the transactions
 	for idx, txn := range transaction {
 		MempoolMutex.RLock()
 		transactions[idx+1] = Mempool[txn]
@@ -326,16 +328,13 @@ func createBlock(transaction []string, coinbaseFee float64) (Block, error) {
 		Timestamp:     time.Now(),
 	}
 
-	// Generate the block hash
-	newBlock.generateBlockHash()
-
 	// Add the block hash to all the transactions
 	for idx := range transactions {
 		transactions[idx].Block_hash = newBlock.Block_hash
 	}
 
 	// Create the merkle root
-	newBlock.Merkle_hash = buildMerkle(newBlock.Transactions)
+	newBlock.Merkle_hash = buildMerkle(newBlock.Transactions).Value
 
 	return newBlock, nil
 }
