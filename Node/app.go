@@ -480,63 +480,8 @@ func main() {
 			}
 
 			// Mine the block
-			mineBlock(block)
-
-			// Create BlockDTO
-			blockDTO := BlockDTO{
-				Block_hash:    block.Block_hash,
-				Block_height:  block.Block_height,
-				Previous_hash: block.Previous_hash,
-				Nonce:         block.Nonce,
-				Difficulty:    block.Difficulty,
-				Merkle_hash:   block.Merkle_hash,
-				Timestamp:     block.Timestamp,
-				Transactions:  []string{},
-			}
-
-			// Add the transactions to the BlockDTO
-			for _, txn := range block.Transactions {
-				blockDTO.Transactions = append(blockDTO.Transactions, txn.Txn_id)
-			}
-
-			// Propagate the block to all the connected peers
-			for _, peer := range peerArray {
-				// Create a new stream for the peer
-				stream, err := User.NewStream(ctx, peer.ID, protocol.ID(config.ProtocolID+"/propagate"))
-				if err != nil {
-					fmt.Println("Failed to create stream with peer:", peer.ID)
-					continue
-				}
-
-				// Create a buffered writer for the stream
-				rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
-				// Serialize the block to JSON
-				data, err := json.Marshal(blockDTO)
-				if err != nil {
-					fmt.Println("Failed to serialize block:", err)
-					stream.Close()
-					continue
-				}
-
-				// Send the serialized block
-				_, err = rw.WriteString(string(data) + "\n")
-				if err != nil {
-					fmt.Println("Failed to send block to peer:", peer.ID, err)
-					stream.Close()
-					continue
-				}
-
-				// Flush the buffer to ensure data is sent
-				err = rw.Flush()
-				if err != nil {
-					fmt.Println("Failed to flush data to peer:", peer.ID, err)
-					stream.Close()
-					continue
-				}
-
-				stream.Close()
-			}
+			go mineBlock(block)
+			logger.Info("Mining the block")
 		}
 	}
 }
