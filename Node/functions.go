@@ -495,14 +495,52 @@ func mineBlock(block Block) error {
 
 // TODO
 func startUp() {
+	// Create the genesis block if it doesn't exist
+	if Genesis_Block == "" {
+		genesisBlock := Block{
+			Block_height:  0,
+			Previous_hash: "",
+			Transactions:  []Transaction{},
+			Timestamp:     time.Unix(0, 0),
+		}
+		genesisBlock.generateBlockHash()
+		Blockchain[genesisBlock.Block_hash] = genesisBlock
+		Genesis_Block = genesisBlock.Block_hash
+		Latest_Block = genesisBlock.Block_hash
+	}
 
-	// Create the genesis block
-	// Download the blockchain -> UTXO Set, Block Set and the TRansactions Set included, making the merkle roots as well
+	// Download the blockchain -> UTXO Set, Block Set and the Transactions Set included, making the merkle roots as well in the makeBlockchain function
+	// This is a placeholder for the actual implementation of downloading the blockchain
+	// Example: downloadBlockchain()
+
 	// Download the mempool
-
+	// This is a placeholder for the actual implementation of downloading the mempool
+	// Example: downloadMempool()
 }
 
 // Validate whether the recieved blockchain copy has some inconsistencies
-func validateBlockchain() {
+func validateBlockchain() error {
+	BlockMutex.RLock()
+	defer BlockMutex.RUnlock()
 
+	// Start from the latest block and traverse backwards
+	block := Blockchain[Latest_Block]
+	for block.Block_hash != Genesis_Block {
+		// Validate the block
+		err := validateBlock(block)
+		if err != nil {
+			return fmt.Errorf("block %s is invalid: %v", block.Block_hash, err)
+		}
+
+		// Move to the previous block
+		block = Blockchain[block.Previous_hash]
+	}
+
+	// Validate the genesis block
+	err := validateBlock(Blockchain[Genesis_Block])
+	if err != nil {
+		return fmt.Errorf("genesis block is invalid: %v", err)
+	}
+
+	return nil
 }
