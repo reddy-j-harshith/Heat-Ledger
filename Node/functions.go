@@ -193,7 +193,7 @@ func removeFromMempool(block Block) {
 		TransMutex.Unlock()
 
 		// Handle the UTXOs, creating and destorying the UTXOs
-		go handleUTXO(txn)
+		go handleUTXO(&txn)
 
 		// Remove the transaction from the mempool
 		MempoolMutex.Lock()
@@ -203,7 +203,7 @@ func removeFromMempool(block Block) {
 }
 
 // Add and Remove UTXOs
-func handleUTXO(txn Transaction) {
+func handleUTXO(txn *Transaction) {
 
 	// Destory the UTXOs
 	for _, input := range txn.Inputs {
@@ -265,7 +265,7 @@ func makeBlockchain(blockchain []Block) error {
 
 		// Handle the UTXOs, creating and destorying the UTXOs for the new blocks
 		for _, txn := range block.Transactions {
-			go handleUTXO(txn)
+			go handleUTXO(&txn)
 			TransMutex.Lock()
 			Transactions[txn.Txn_id] = txn
 			TransMutex.Unlock()
@@ -539,12 +539,8 @@ func startUp() {
 	}
 
 	// Download the blockchain -> UTXO Set, Block Set and the Transactions Set included, making the merkle roots as well in the makeBlockchain function
-	// This is a placeholder for the actual implementation of downloading the blockchain
-	// Example: downloadBlockchain()
 
 	// Download the mempool
-	// This is a placeholder for the actual implementation of downloading the mempool
-	// Example: downloadMempool()
 }
 
 // Validate whether the recieved blockchain copy has some inconsistencies
