@@ -15,6 +15,7 @@ func SetNodeHandlers() {
 
 	// Download handlers
 	User.SetStreamHandler(protocol.ID(config.ProtocolID+"/download/blockchain"), exportBlockchain)
+	User.SetStreamHandler(protocol.ID(config.ProtocolID+"/download/mempool"), exportMempool)
 	User.SetStreamHandler(protocol.ID(config.ProtocolID+"/download/block"), exportBlock)
 	User.SetStreamHandler(protocol.ID(config.ProtocolID+"/download/transaction"), exportTransaction)
 }

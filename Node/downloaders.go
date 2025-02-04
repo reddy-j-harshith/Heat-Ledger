@@ -52,6 +52,29 @@ func downloadBlockchain(rw *bufio.ReadWriter, strm network.Stream) {
 	fmt.Println("Blockchain sent to", strm.Conn().RemotePeer())
 }
 
+// Send the Mempool
+func downloadMempool(rw *bufio.ReadWriter, strm network.Stream) {
+
+	// Send the length of the Mempool
+	_, err := rw.WriteString(strconv.Itoa(len(Mempool)) + "\n")
+	rw.Flush()
+	if err != nil {
+		fmt.Println("Failed to send Mempool length:", err)
+		return
+	}
+
+	// Send the Mempool
+	for _, txn := range Mempool {
+		// Convert to JSON
+		txnJSON, _ := json.Marshal(txn)
+		// Send the transaction
+		rw.WriteString(string(txnJSON) + "\n")
+		rw.Flush()
+	}
+
+	fmt.Println("Mempool sent to", strm.Conn().RemotePeer())
+}
+
 // Send a block
 func downloadBlock(rw *bufio.ReadWriter, strm network.Stream) {
 

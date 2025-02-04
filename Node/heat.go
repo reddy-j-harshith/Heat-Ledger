@@ -284,7 +284,7 @@ func main() {
 			continue
 		}
 
-		// Sync the Blockchain
+		// Sync the Blockchain and Mempool
 		if mode == "4" {
 			// Pick a random peer to sync the blockchain
 			peerMutex.RLock()
@@ -294,61 +294,21 @@ func main() {
 				continue
 			}
 			randomPeer := peers[rand.Intn(len(peers))]
-			fmt.Println("Syncing with peer:", randomPeer.ID.String())
-			// Add your blockchain syncing logic here
 			peerMutex.RUnlock()
+			fmt.Println("Syncing with peer:", randomPeer.ID.String())
 
-			stream, err := User.NewStream(ctx, randomPeer.ID, protocol.ID(config.ProtocolID+"/download/blockchain"))
+			// Update the Mempool
+			go updateMempool(randomPeer)
+
+			// Communicate with remote peer to obtain the new blocks
+			blocks, err := updateBlockchain(randomPeer)
 			if err != nil {
-				fmt.Println("Failed to create stream with peer:", randomPeer.ID)
+				fmt.Println("Failed to update blockchain:", err)
 				continue
 			}
 
-			// Create a buffered writer for the stream
-			rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
-			// Send the latest block height
-			_, err = rw.WriteString(Latest_Block + "\n")
-			if err != nil {
-				fmt.Println("Failed to send latest block height to peer:", randomPeer.ID, err)
-				stream.Close()
-				continue
-			}
-
-			height_gap, _ := rw.ReadString('\n')
-
-			if height_gap == "Shorter. Try from others\n" {
-				fmt.Println("Peer has a shorter blockchain. Try from others")
-				stream.Close()
-				continue
-			}
-
-			height_gap = strings.TrimSpace(height_gap)
-			height_gap_int, _ := strconv.Atoi(height_gap)
-
-			blocks := make([]Block, height_gap_int)
-
-			// Receive the blockchain from the peer
-			for i := 0; i < height_gap_int; i++ {
-				// Read the block from the peer
-				blockData, _ := rw.ReadString('\n')
-
-				// Save them to the blockchain
-				var block Block
-				err = json.Unmarshal([]byte(blockData), &block)
-				if err != nil {
-					fmt.Println("Failed to parse block data:", err)
-					continue
-				}
-
-				// Add it to the blocks slice
-				blocks = append(blocks, block)
-			}
-
-			// Close the stream
-			stream.Close()
-
-			err = makeBlockchain(blocks)
+			// Create the blockchain with the received blocks
+			err = createBlockchain(blocks)
 			if err != nil {
 				continue
 			}

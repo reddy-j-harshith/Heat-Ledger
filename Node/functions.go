@@ -8,8 +8,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
@@ -251,8 +254,104 @@ func displayBlockchain() {
 	BlockMutex.RUnlock()
 }
 
+// Update the Mempool
+func updateMempool(peer peer.AddrInfo) error {
+
+	stream, err := User.NewStream(context.Background(), peer.ID, protocol.ID(config.ProtocolID+"/download/mempool"))
+	if err != nil {
+		return fmt.Errorf("failed to create stream with peer: %s", peer.String())
+	}
+
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+
+	// Recieve the length of the mempool
+	mempoolLength, _ := rw.ReadString('\n')
+	mempoolLength = strings.TrimSpace(mempoolLength)
+	mempoolLengthInt, _ := strconv.Atoi(mempoolLength)
+
+	for i := 0; i < mempoolLengthInt; i++ {
+		// Read the transaction from the peer
+		txnData, _ := rw.ReadString('\n')
+
+		// Save them to the mempool
+		var txn Transaction
+		err = json.Unmarshal([]byte(txnData), &txn)
+		if err != nil {
+			fmt.Println("Failed to parse transaction data:", err)
+			continue
+		}
+
+		// Add the transaction to the mempool
+		MempoolMutex.Lock()
+		Mempool[txn.Txn_id] = txn
+		MempoolMutex.Unlock()
+	}
+
+	return nil
+}
+
+// Update the Blockchain
+func updateBlockchain(peer peer.AddrInfo) ([]Block, error) {
+
+	stream, err := User.NewStream(context.Background(), peer.ID, protocol.ID(config.ProtocolID+"/download/blockchain"))
+
+	if err != nil {
+		fmt.Println("Failed to create stream with peer:", peer.String())
+		return nil, err
+	}
+
+	// Create a buffered reader writer for the stream
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+
+	// Send the latest block height
+	_, err = rw.WriteString(Latest_Block + "\n")
+	if err != nil {
+		fmt.Println("Failed to send latest block height to peer:",
+			stream.Conn().RemotePeer().String(),
+			err,
+		)
+		stream.Close()
+		return nil, err
+	}
+
+	height_gap, _ := rw.ReadString('\n')
+
+	if height_gap == "Shorter. Try from others\n" {
+		fmt.Println("Peer has a shorter blockchain. Try from others")
+		stream.Close()
+		return nil, fmt.Errorf("peer has a shorter blockchain")
+	}
+
+	height_gap = strings.TrimSpace(height_gap)
+	height_gap_int, _ := strconv.Atoi(height_gap)
+
+	blocks := make([]Block, height_gap_int)
+
+	// Receive the blockchain from the peer
+	for i := 0; i < height_gap_int; i++ {
+		// Read the block from the peer
+		blockData, _ := rw.ReadString('\n')
+
+		// Save them to the blockchain
+		var block Block
+		err = json.Unmarshal([]byte(blockData), &block)
+		if err != nil {
+			fmt.Println("Failed to parse block data:", err)
+			continue
+		}
+
+		// Add it to the blocks slice
+		blocks = append(blocks, block)
+	}
+
+	// Close the stream
+	stream.Close()
+
+	return blocks, nil
+}
+
 // Add the new blocks to the existing blockchain
-func makeBlockchain(blockchain []Block) error {
+func createBlockchain(blockchain []Block) error {
 
 	// Note: We assume that the []Block is sorted in the order of the blockchain
 	// Last one is the earliest block
