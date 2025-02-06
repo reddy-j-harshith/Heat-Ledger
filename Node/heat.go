@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"strings"
 
@@ -286,30 +285,9 @@ func main() {
 
 		// Sync the Blockchain and Mempool
 		if mode == "4" {
-			// Pick a random peer to sync the blockchain
-			peerMutex.RLock()
-			peers := peerArray
-			if len(peers) == 0 {
-				fmt.Println("No peers available for syncing")
-				continue
-			}
-			randomPeer := peers[rand.Intn(len(peers))]
-			peerMutex.RUnlock()
-			fmt.Println("Syncing with peer:", randomPeer.ID.String())
-
-			// Update the Mempool
-			go updateMempool(randomPeer)
-
-			// Communicate with remote peer to obtain the new blocks
-			blocks, err := updateBlockchain(randomPeer)
+			err := syncBlockchain()
 			if err != nil {
-				fmt.Println("Failed to update blockchain:", err)
-				continue
-			}
-
-			// Create the blockchain with the received blocks
-			err = createBlockchain(blocks)
-			if err != nil {
+				fmt.Println("Failed to sync blockchain:", err)
 				continue
 			}
 		}

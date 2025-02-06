@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -290,8 +291,40 @@ func updateMempool(peer peer.AddrInfo) error {
 	return nil
 }
 
+// Sync blockchain
+func syncBlockchain() error {
+	// Pick a random peer to sync the blockchain
+	peerMutex.RLock()
+	peers := peerArray
+	if len(peers) == 0 {
+		fmt.Println("No peers available for syncing")
+		return fmt.Errorf("no peers available for syncing")
+	}
+	randomPeer := peers[rand.Intn(len(peers))]
+	peerMutex.RUnlock()
+	fmt.Println("Syncing with peer:", randomPeer.ID.String())
+
+	// Update the Mempool
+	go updateMempool(randomPeer)
+
+	// Communicate with remote peer to obtain the new blocks
+	blocks, err := getBlockchain(randomPeer)
+	if err != nil {
+		fmt.Println("Failed to update blockchain:", err)
+		return err
+	}
+
+	// Create the blockchain with the received blocks
+	err = createBlockchain(blocks)
+	if err != nil {
+		fmt.Println("Failed to create blockchain:", err)
+		return err
+	}
+	return nil
+}
+
 // Update the Blockchain
-func updateBlockchain(peer peer.AddrInfo) ([]Block, error) {
+func getBlockchain(peer peer.AddrInfo) ([]Block, error) {
 
 	stream, err := User.NewStream(context.Background(), peer.ID, protocol.ID(config.ProtocolID+"/download/blockchain"))
 
