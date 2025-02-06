@@ -707,8 +707,16 @@ func validateBlockchain() error {
 	BlockMutex.RLock()
 	defer BlockMutex.RUnlock()
 
-	// Start from the latest block and traverse backwards
-	block := Blockchain[Latest_Block]
+	if len(Blockchain) == 0 {
+		return fmt.Errorf("blockchain is empty")
+	}
+
+	// Ensure the latest block exists
+	block, exists := Blockchain[Latest_Block]
+	if !exists {
+		return fmt.Errorf("latest block %s not found in blockchain", Latest_Block)
+	}
+
 	for block.Block_hash != Genesis_Block {
 		// Validate the block
 		err := validateBlock(block)
@@ -717,11 +725,20 @@ func validateBlockchain() error {
 		}
 
 		// Move to the previous block
-		block = Blockchain[block.Previous_hash]
+		prevBlock, exists := Blockchain[block.Previous_hash]
+		if !exists {
+			return fmt.Errorf("block %s references a missing block %s", block.Block_hash, block.Previous_hash)
+		}
+		block = prevBlock
 	}
 
-	// Validate the genesis block
-	err := validateBlock(Blockchain[Genesis_Block])
+	// Validate the genesis block outside the loop
+	genesisBlock, exists := Blockchain[Genesis_Block]
+	if !exists {
+		return fmt.Errorf("genesis block %s is missing", Genesis_Block)
+	}
+
+	err := validateBlock(genesisBlock)
 	if err != nil {
 		return fmt.Errorf("genesis block is invalid: %v", err)
 	}
