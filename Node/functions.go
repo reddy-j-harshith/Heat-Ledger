@@ -701,7 +701,6 @@ func startUp() error {
 	return nil
 }
 
-// TODO
 // Validate whether the recieved blockchain copy has some inconsistencies
 func validateBlockchain() error {
 	BlockMutex.RLock()
