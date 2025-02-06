@@ -292,18 +292,7 @@ func updateMempool(peer peer.AddrInfo) error {
 }
 
 // Sync blockchain
-func syncBlockchain() error {
-	// Pick a random peer to sync the blockchain
-	peerMutex.RLock()
-	peers := peerArray
-	if len(peers) == 0 {
-		fmt.Println("No peers available for syncing")
-		return fmt.Errorf("no peers available for syncing")
-	}
-	randomPeer := peers[rand.Intn(len(peers))]
-	peerMutex.RUnlock()
-	fmt.Println("Syncing with peer:", randomPeer.ID.String())
-
+func syncBlockchain(randomPeer peer.AddrInfo) error {
 	// Update the Mempool
 	go updateMempool(randomPeer)
 
@@ -659,8 +648,7 @@ func mineBlock(ctx context.Context, block Block) error {
 	return nil
 }
 
-// TODO
-func startUp() {
+func createGenesis() {
 	// Create the genesis block if it doesn't exist
 	if Genesis_Block == "" {
 		genesisBlock := Block{
@@ -674,10 +662,44 @@ func startUp() {
 		Genesis_Block = genesisBlock.Block_hash
 		Latest_Block = genesisBlock.Block_hash
 	}
+}
 
-	// Download the blockchain -> UTXO Set, Block Set and the Transactions Set included, making the merkle roots as well in the makeBlockchain function
+// TODO
+func startUp() error {
+	// Create the genesis block
+	createGenesis()
+
+	// Pick a random peer to sync the blockchain
+	peerMutex.RLock()
+	peers := peerArray
+	if len(peers) == 0 {
+		return fmt.Errorf("no peers available")
+	}
+	randomPeer := peers[rand.Intn(len(peers))]
+	peerMutex.RUnlock()
+	fmt.Println("Syncing with peer:", randomPeer.ID.String())
+
+	err := syncBlockchain(randomPeer)
+	if err != nil {
+		fmt.Println("Failed to sync blockchain:", err)
+		return err
+	}
+
+	// Download the blockchain
+	err = syncBlockchain(randomPeer)
+	if err != nil {
+		fmt.Println("Failed to download blockchain:", err)
+		return err
+	}
 
 	// Download the mempool
+	err = updateMempool(randomPeer)
+	if err != nil {
+		fmt.Println("Failed to download mempool:", err)
+		return err
+	}
+
+	return nil
 }
 
 // Validate whether the recieved blockchain copy has some inconsistencies

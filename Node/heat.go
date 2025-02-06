@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 
@@ -153,7 +154,11 @@ func main() {
 	}()
 
 	// Initialize and poplutate the databases
-	startUp()
+	err = startUp()
+	if err != nil {
+		fmt.Println("Failed to run startup sequence: ", err)
+		return
+	}
 
 	// For the user communication
 	reader = bufio.NewReader(os.Stdin)
@@ -285,7 +290,17 @@ func main() {
 
 		// Sync the Blockchain and Mempool
 		if mode == "4" {
-			err := syncBlockchain()
+			// Pick a random peer to sync the blockchain
+			peerMutex.RLock()
+			peers := peerArray
+			if len(peers) == 0 {
+				continue
+			}
+			randomPeer := peers[rand.Intn(len(peers))]
+			peerMutex.RUnlock()
+			fmt.Println("Syncing with peer:", randomPeer.ID.String())
+
+			err := syncBlockchain(randomPeer)
 			if err != nil {
 				fmt.Println("Failed to sync blockchain:", err)
 				continue
