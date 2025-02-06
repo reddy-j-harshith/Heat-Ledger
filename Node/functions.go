@@ -391,6 +391,11 @@ func createBlockchain(blockchain []Block) error {
 
 	// Populate the blockchain database
 	for _, block := range blockchain {
+		// Ignore the block making for genesis block
+		if block.Block_height == 0 {
+			continue
+		}
+
 		BlockMutex.Lock()
 		Blockchain[block.Block_hash] = block
 		BlockMutex.Unlock()
