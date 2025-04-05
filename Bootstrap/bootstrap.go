@@ -24,7 +24,7 @@ func generateRSAKey() crypto.PrivKey {
 func main() {
 	// Define the multiaddress for the bootstrap node
 	port := "4001" // Hardcoded port
-	listenAddr := fmt.Sprintf("/ip4/127.0.0.1/tcp/%s", port)
+	listenAddr := fmt.Sprintf("/ip4/192.168.161.231/tcp/%s", port)
 
 	// Create a libp2p host listening on the specified address
 	host, err := libp2p.New(
