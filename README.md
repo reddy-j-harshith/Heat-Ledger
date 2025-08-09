@@ -29,11 +29,11 @@ To get started with the project, follow these steps:
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/reddy-j-harshith/Blockchain
+    git clone https://github.com/reddy-j-harshith/Heat-Ledger
     ```
 2. Navigate to the project directory:
     ```sh
-    cd blockchain
+    cd Heat-Ledger
     ```
 3. Install the dependencies:
     ```sh
